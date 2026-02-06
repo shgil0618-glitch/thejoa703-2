@@ -78,6 +78,11 @@ public class SecurityConfig {
                 // 나머지는 모두 허용
                 .anyRequest().permitAll()
             )
+            // ✅ 커스텀 EntryPoint 추가
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(customAuthenticationEntryPoint())
+            )
+
             // Oauth2 로그인은 소셜로그인 전용
             .oauth2Login(oauth2 -> oauth2.successHandler(oAuth2SuccessHandler))
             // JWT 필터 추가
@@ -85,6 +90,16 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+    @Bean
+    public AuthenticationEntryPoint customAuthenticationEntryPoint() {
+        return (request, response, authException) -> {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"error\": \"Unauthorized - JWT required\"}");
+        };
+    }
+
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
