@@ -46,5 +46,4 @@ app:
     redirect-url: http://44.201.30.217/oauth2/callback
     #redirect-url: http://localhost:3000/oauth2/callback
 
-
  
