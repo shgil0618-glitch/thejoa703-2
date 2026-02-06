@@ -97,7 +97,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
  
         // 													개발환경					운영환경(nginx 통해서 접근하는 실제 주소)
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:3000", "http://13.124.236.156"));  //★ Front 포트번호
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:3000", "http://44.201.30.217"));  //★ Front 포트번호
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
