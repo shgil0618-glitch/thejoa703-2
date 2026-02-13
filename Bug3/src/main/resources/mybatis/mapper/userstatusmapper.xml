@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.thejoa703.dao.UserStatusDao">
+
+	<select id="findAllUserStatus"
+		resultType="com.thejoa703.dto.AdminUserStatusDto">
+		SELECT * FROM (
+		SELECT
+		u.APPUSERID AS appUserId,
+		u.EMAIL,
+		u.NICKNAME,
+		s.STATUS,
+		s.SUSPEND_REASON AS suspendReason,
+		s.SUSPEND_UNTIL AS suspendUntil,
+		ROW_NUMBER() OVER (ORDER BY u.APPUSERID DESC) AS rn
+		FROM BUG3 u
+		JOIN BUG3_MANAGE s ON u.APPUSERID = s.APPUSERID
+		<where>
+			<if test="keyword != null and keyword != ''">
+				(u.EMAIL LIKE '%' || #{keyword} || '%' OR u.NICKNAME LIKE '%' || #{keyword}
+				|| '%')
+			</if>
+		</where>
+		)
+		WHERE rn BETWEEN #{offset} + 1 AND #{offset} + #{limit}
+	</select>
+
+	<select id="countUsers" resultType="int">
+		SELECT COUNT(*) FROM BUG3 u
+		<where>
+			<if test="keyword != null and keyword != ''">
+				(u.EMAIL LIKE '%' || #{keyword} || '%' OR u.NICKNAME LIKE '%' || #{keyword}
+				|| '%')
+			</if>
+		</where>
+	</select>
+
+	<select id="findByAppUserId" parameterType="int"
+		resultType="com.thejoa703.dto.UserStatusDto">
+		SELECT
+		APPUSERID AS appUserId,
+		STATUS AS status,
+		SUSPEND_REASON AS suspendReason,
+		SUSPEND_UNTIL AS suspendUntil,
+		UPDATED_AT AS updatedAt
+		FROM
+		BUG3_MANAGE
+		WHERE
+		APPUSERID = #{appUserId}
+	</select>
+
+	<select id="findAdminUserByAppUserId" parameterType="int"
+		resultType="com.thejoa703.dto.AdminUserStatusDto">
+		SELECT
+		u.APPUSERID AS appUserId,
+		u.EMAIL AS email,
+		u.NICKNAME AS nickname,
+		s.STATUS AS status,
+		s.SUSPEND_REASON AS suspendReason,
+		s.SUSPEND_UNTIL AS suspendUntil
+		FROM
+		BUG3 u
+		JOIN
+		BUG3_MANAGE s ON u.APPUSERID = s.APPUSERID
+		WHERE
+		u.APPUSERID = #{appUserId}
+	</select>
+
+	<update id="recoverExpiredSuspension" parameterType="int">
+		UPDATE BUG3_MANAGE
+		SET
+		STATUS = 'ACTIVE',
+		SUSPEND_REASON = NULL,
+		SUSPEND_UNTIL = NULL,
+		UPDATED_AT = SYSDATE
+		WHERE
+		APPUSERID = #{appUserId}
+		AND STATUS = 'SUSPEND'
+		AND SUSPEND_UNTIL &lt; SYSDATE
+	</update>
+
+	<insert id="insert"
+		parameterType="com.thejoa703.dto.UserStatusDto">
+		INSERT INTO BUG3_MANAGE (
+		APPUSERID,
+		STATUS,
+		UPDATED_AT
+		)
+		VALUES (
+		#{appUserId, jdbcType=INTEGER},
+		#{status, jdbcType=VARCHAR},
+		SYSDATE
+		)
+	</insert>
+
+	<update id="update"
+		parameterType="com.thejoa703.dto.UserStatusDto">
+		UPDATE BUG3_MANAGE
+		<set>
+			STATUS = #{status},
+			<choose>
+				<when test="status == 'SUSPEND'">
+					SUSPEND_REASON = #{suspendReason, jdbcType=VARCHAR},
+					SUSPEND_UNTIL = #{suspendUntil, jdbcType=DATE},
+				</when>
+				<otherwise>
+					SUSPEND_REASON = NULL,
+					SUSPEND_UNTIL = NULL,
+				</otherwise>
+			</choose>
+			UPDATED_AT = SYSDATE
+		</set>
+		WHERE APPUSERID = #{appUserId, jdbcType=INTEGER}
+	</update>
+
+</mapper>

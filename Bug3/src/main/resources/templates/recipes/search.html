@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+   xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+   xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+   layout:decorate="~{fragments/layout}">
+<head lang="ko">
+<meta charset="UTF-8">
+<meta name="_csrf" th:content="${_csrf.token}" />
+<meta name="_csrf_header" th:content="${_csrf.headerName}" />
+<meta name="isAuthenticated"
+   th:content="${#authorization.expression('isAuthenticated()')}" />
+
+<title>레시피 검색</title>
+<style>
+/* 전체 컨테이너 여백 */
+/* .main-recipe-container {
+   padding: 40px 15px;
+   background-color: #FDF5E6; /* 배경색 통일 */
+   
+} */
+
+/* 검색 바 영역 디자인 개선 */
+.search-category-bar {
+   background: #ffffff; /* 내부 박스는 흰색으로 깔끔하게 */
+   padding: 30px;
+   border-radius: 15px;
+   margin-bottom: 40px;
+   box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1); /* 브라운 톤 그림자 */
+   border: 1px solid #EADDCA;
+}
+
+.search-label {
+   color: #6F4E37;
+   font-size: 1.2rem;
+   margin-bottom: 15px;
+   display: block;
+}
+/* 1. 페이징 버튼 손가락 모양 및 스타일 유지 */
+.pagination .page-link {
+   color: #8B4513;
+   background-color: #fff;
+   border: 1px solid #D2B48C;
+   cursor: pointer; /* 마우스 올리면 손가락 모양 */
+   transition: all 0.2s ease;
+}
+
+.pagination .page-item.active .page-link {
+   background-color: #8B4513;
+   border-color: #8B4513;
+   color: #FDF5E6;
+   cursor: default; /* 활성화된 페이지는 기본 포인터 */
+}
+
+.pagination .page-link:hover {
+   background-color: #F5DEB3; /* 연한 베이지색으로 하이라이트 */
+   color: #8B4513;
+   border-color: #D2B48C;
+}
+
+/* 2. 카테고리 및 정렬 버튼에도 포인터 추가 */
+.filter-btn, .sort-btn {
+   cursor: pointer !important;
+}
+
+/* 3. 레시피 카드 전체에 포인터 추가 (이미 설정되어 있지만 확인차) */
+.recipe-card {
+   cursor: pointer;
+}
+
+/* 4. 상태 메시지(로딩 중) 등에 포인터가 생기지 않도록 방지 */
+.status-msg {
+   cursor: default;
+}
+/* 버튼 스타일 커스텀 */
+.btn-primary-theme {
+   background-color: #8B4513 !important;
+   border-color: #8B4513 !important;
+   color: #FDF5E6 !important;
+   font-weight: bold;
+}
+
+.btn-primary-theme:hover {
+   background-color: #6F4E37 !important;
+}
+
+/* 카테고리 버튼 필터 스타일 */
+.filter-btn {
+   border-color: #D2B48C !important;
+   color: #8B4513 !important;
+   margin-bottom: 5px;
+}
+
+.filter-btn.active, .filter-btn:hover {
+   background-color: #8B4513 !important;
+   color: #FDF5E6 !important;
+}
+
+/* 카드 이미지 */
+.recipe-card img {
+   width: 100%;
+   height: 220px;
+   object-fit: cover;
+   border-radius: 10px 10px 0 0;
+}
+
+/* 레시피 카드 개선 */
+.recipe-card {
+   border: none;
+   border-radius: 12px;
+   background: #fff;
+   transition: all .3s ease;
+   box-shadow: 0 2px 10px rgba(0, 0, 0, .05);
+   height: 100%;
+   margin-bottom: 10px;
+}
+
+.recipe-card:hover {
+   transform: translateY(-8px);
+   box-shadow: 0 12px 30px rgba(111, 78, 55, 0.15);
+}
+
+.card-content {
+   padding: 20px;
+}
+
+.recipe-description {
+   font-size: 0.9rem;
+   color: #6c757d;
+   height: 2.7em;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   display: -webkit-box;
+   -webkit-line-clamp: 2;
+   -webkit-box-orient: vertical;
+}
+
+/* 카테고리 라벨 */
+.category-label {
+   background: #FDF5E6;
+   color: #8B4513;
+   padding: 4px 12px;
+   border-radius: 20px;
+   font-size: .8rem;
+   font-weight: bold;
+   border: 1px solid #D2B48C;
+}
+
+/* 난이도 표시 박스 */
+.difficulty-box {
+   padding: 3px 8px;
+   border-radius: 4px;
+   font-size: 0.8rem;
+}
+
+.difficulty-easy {
+   background: #E8F5E9;
+   color: #2E7D32;
+}
+
+.difficulty-medium {
+   background: #FFF3E0;
+   color: #EF6C00;
+}
+
+.difficulty-hard {
+   background: #FFEBEE;
+   color: #C62828;
+}
+
+/* 좋아요 버튼 */
+.like-inline-btn.liked .heart {
+   color: #e74c3c;
+}
+/* 좋아요 버튼: 배경과 테두리 완전 제거 */
+.like-inline-btn {
+   background: transparent !important; /* 배경 투명 */
+   border: none !important; /* 테두리 삭제 */
+   padding: 0 !important; /* 여백 제거 */
+   cursor: pointer;
+   display: inline-flex;
+   align-items: center;
+   gap: 4px; /* 하트와 숫자 사이 간격 */
+   color: #6c757d; /* 기본 글자색 (회색) */
+   transition: transform 0.2s ease;
+}
+
+/* 하트 아이콘 스타일 */
+.like-inline-btn .heart {
+   font-size: 1.0rem;
+   transition: color 0.2s ease;
+}
+
+/* ❤️ 활성화 상태 (좋아요 눌렀을 때) */
+.like-inline-btn.liked {
+   color: #dc3545 !important; /* 전체 색상을 빨간색으로 */
+}
+
+.like-inline-btn.liked .heart {
+   color: #dc3545 !important;
+}
+
+/* 마우스 올렸을 때 살짝 커지는 효과만 부여 */
+.like-inline-btn:hover {
+   transform: scale(1.1);
+   background: transparent !important;
+}
+/* 페이지네이션 색상 맞춤 */
+.pagination .page-link {
+   color: #8B4513;
+   background-color: #fff;
+   border: 1px solid #D2B48C;
+}
+
+.pagination .page-item.active .page-link {
+   background-color: #8B4513;
+   border-color: #8B4513;
+   color: #FDF5E6;
+}
+
+/* 자연어 처리 로딩 애니메이션 */
+#nlpLoading {
+    font-size: 1.05rem;
+    color: #8B4513;
+    font-weight: bold;
+}
+
+#nlpLoading::after {
+    content: '';
+    display: inline-block;
+    width: 1em;
+    text-align: left;
+    animation: dots 1.5s infinite;
+}
+
+/* 리뷰 섹션 전체 박스 */
+.review-section {
+    background-color: #FDF5E6 !important; /* 조리 순서와 동일한 배경색 */
+    border: 1px solid #D2B48C !important; /* 브라운톤 테두리 선 추가 */
+    border-radius: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* 개별 리뷰 항목 테두리 및 간격 */
+.review-item {
+    border: 1px solid #EADDCA; /* 리뷰끼리 구분되는 안쪽 네모 박스 선 */
+    background-color: #ffffff; /* 가독성을 위해 개별 리뷰는 흰색 박스 처리 */
+    margin-bottom: 10px;
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.review-item:last-child {
+    margin-bottom: 0;
+}
+
+
+@keyframes dots {
+    0%   { content: ''; }
+    33%  { content: '.'; }
+    66%  { content: '..'; }
+    100% { content: '...'; }
+}
+
+
+/* 광고를 포함할 전체 영역 기준점 설정 */
+.main-recipe-container {
+    position: relative; 
+    padding: 40px 15px;
+    background-color: #FDF5E6;
+    min-height: 100vh;
+}
+
+/* 전체 배경 기준 설정 */
+.main-recipe-container {
+    position: relative;
+    padding: 40px 15px;
+    background-color: #FDF5E6;
+    min-height: 1000px; /* 페이지가 짧아도 광고 영역 확보 */
+}
+
+/* 사이드 광고를 담는 큰 틀 */
+.side-ad-wrapper {
+    position: absolute;
+    top: 40px; /* 헤더 바로 아래부터 시작 */
+    width: 200px; /* 광고 가로 사이즈 증가 */
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* 광고와 광고 사이의 수직 간격 */
+    z-index: 10;
+}
+
+/* 개별 광고 박스 스타일 */
+.ad-box {
+    width: 100%;
+    height: 600px; /* 광고 높이 */
+    background-color: #ffffff;
+    border: 1px solid #D2B48C;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+/* 왼쪽 광고 배치: 본문에서 더 멀리 떨어뜨림 */
+.left-sidebar {
+    left: 50%;
+    /* 중앙에서 (본문 절반 660px + 여백 60px + 광고너비 200px) 만큼 이동 */
+    margin-left: -920px; 
+}
+
+/* 오른쪽 광고 배치 */
+.right-sidebar {
+    right: 50%;
+    margin-right: -920px;
+}
+
+.ad-label {
+    font-size: 11px;
+    color: #A0A0A0;
+    margin: 8px 0;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* 해상도가 낮아지면 본문을 가리지 않도록 숨김 처리 */
+@media (max-width: 1850px) {
+    .side-ad-wrapper {
+        display: none;
+    }
+}
+
+</style>
+</head>
+<body>
+   <div layout:fragment="content" class="main-recipe-container">
+      <div class="container">
+         
+        <div class="side-ad-wrapper left-sidebar">
+      <div class="ad-box">
+         <span class="ad-label">ADVERTISEMENT</span>
+         <img src="https://via.placeholder.com/200x550?text=Left+Ad+1" alt="광고1" style="width:100%;">
+      </div>
+      <div class="ad-box">
+         <span class="ad-label">ADVERTISEMENT</span>
+         <img src="https://via.placeholder.com/200x550?text=Left+Ad+2" alt="광고2" style="width:100%;">
+      </div>
+   </div>
+
+   <div class="side-ad-wrapper right-sidebar">
+      <div class="ad-box">
+         <span class="ad-label">ADVERTISEMENT</span>
+         <img src="https://via.placeholder.com/200x550?text=Right+Ad+1" alt="광고3" style="width:100%;">
+      </div>
+      <div class="ad-box">
+         <span class="ad-label">ADVERTISEMENT</span>
+         <img src="https://via.placeholder.com/200x550?text=Right+Ad+2" alt="광고4" style="width:100%;">
+      </div>
+   </div>
+         
+         
+         <div th:if="${suggestion}" class="mb-3">
+            <div class="alert alert-warning border-0 shadow-sm">
+               💡 검색어를 '<strong><span th:text="${suggestion}"></span></strong>'(으)로 바꿔 검색하시겠습니까?
+            </div>
+         </div>
+		 
+		 <div class="recommend-box mb-5 p-4" style="background-color: #ffffff; border-radius: 20px; border: 2px dashed #D2B48C; box-shadow: 0 10px 25px rgba(139, 69, 19, 0.05);">
+		     <div class="row align-items-center">
+		         <div class="col-lg-3 mb-3 mb-lg-0">
+		             <h4 class="fw-bold mb-1" style="color: #8B4513;">🎲 오늘 뭐 먹지?</h4>
+		             <p class="text-muted small mb-0">메뉴 고민 끝!</p>
+		         </div>
+		         
+		         <div class="col-lg-9">
+		             <div class="row g-2 align-items-center">
+		                 <div class="col-sm-auto me-2">
+		                     <div class="form-check form-switch mb-0">
+		                         <input class="form-check-input" type="checkbox" id="highQualityToggle" style="cursor:pointer;">
+		                         <label class="form-check-label small fw-bold" for="highQualityToggle" style="color: #d35400; cursor:pointer; white-space: nowrap;">
+		                             🔥 인기글만
+		                         </label>
+		                     </div>
+		                 </div>
+		                 
+		                 <div class="col-sm-3">
+		                     <select id="recCategory" class="form-select border-2">
+		                         <option value="">전체 카테고리</option>
+		                         <option value="2">한식</option>
+		                         <option value="3">양식</option>
+		                         <option value="4">중식</option>
+		                         <option value="5">일식</option>
+		                         <option value="6">디저트</option>
+		                         <option value="7">건강식</option>
+		                         <option value="8">기타</option>
+		                     </select>
+		                 </div>
+		                 
+		                 <div class="col-sm-4">
+		                     <input type="text" id="recKeyword" class="form-control border-2" placeholder="재료나 메뉴명">
+		                 </div>
+		                 
+		                 <div class="col-sm-2">
+		                     <button type="button" id="recommendBtn" class="btn btn-primary-theme w-100 shadow-sm" style="white-space: nowrap;">
+		                         추천!
+		                     </button>
+		                 </div>
+		             </div>
+		         </div>
+		     </div>
+		 </div>
+
+			<div id="recommendDisplay" style="display:none;" class="mb-5">
+			    <div class="card border-0 shadow-sm" style="background-color: #fff9f0; border: 1px solid #D2B48C !important; border-radius: 15px;">
+			        <div class="card-body p-4">
+			            <div class="d-flex align-items-center">
+			                <div class="me-4">
+			                    <img id="recImage" src="" alt="추천 레시피" style="width: 120px; height: 120px; object-fit: cover; border-radius: 12px; border: 2px solid #fff;">
+			                </div>
+			                <div class="flex-grow-1">
+			                    <div class="d-flex justify-content-between align-items-start">
+			                        <div>
+			                            <span class="badge bg-warning text-dark mb-2">✨ 오늘의 추천 메뉴</span>
+			                            <h4 id="recTitle" class="fw-bold mb-1" style="color: #8B4513;"></h4>
+			                        </div>
+			                        <button type="button" class="btn-close" onclick="$('#recommendDisplay').slideUp()"></button>
+			                    </div>
+			                    <p class="text-muted small mb-3">
+			                        <span id="recNickname" class="fw-bold"></span> 님 레시피 | 
+			                        카테고리: <span id="recCategoryName" class="text-primary"></span> | 
+			                        조회수: <span id="recViews"></span>
+			                    </p>
+			                    <a href="#" id="recLink" class="btn btn-sm btn-primary-theme px-4">레시피 보러가기</a>
+			                </div>
+			            </div>
+			        </div>
+			    </div>
+		 </div>
+
+         <h3 class="mb-4 fw-bold" style="color: #4A3728;">
+            🍳 레시피 찾기 <small class="text-muted" style="font-size: 1rem;">(총
+               <span id="recipeCount">0</span>개)
+            </small>
+         </h3>
+
+         <div class="search-category-bar">
+            <div class="row g-3 align-items-end">
+               <div class="col-md-2">
+                  <label class="form-label fw-bold text-muted small">검색 조건</label> <select
+                     id="searchField" class="form-select border-2">
+                     <option value="ALL">전체</option>
+                     <option value="TITLE">제목</option>
+                     <option value="AUTHOR">작성자</option>
+                  </select>
+               </div>
+               <div class="col-md-7">
+                  <label class="form-label fw-bold text-muted small">레시피 이름
+                     또는 재료</label>
+                  <div class="input-group">
+                     <input type="search"
+                        class="form-control form-control-lg border-2" id="search"
+                        placeholder="무엇을 찾고 싶으신가요?">
+                     <button class="btn btn-primary-theme px-4" id="searchBtn">검색</button>
+                  </div>
+               </div>
+               <div class="col-md-3 text-end">
+                  <a href="javascript:void(0)" id="registerBtn"
+                     class="btn btn-primary-theme btn-lg w-100 shadow-sm"> 나만의 레시피
+                     등록 </a>
+               </div>
+            </div>
+
+            <hr class="my-4" style="border-color: #EADDCA;">
+
+            <div
+               class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+               <div class="category-btns">
+                  <button
+                     class="btn btn-outline-secondary filter-btn active rounded-pill px-3"
+                     data-filter="">전체</button>
+                  <button
+                     class="btn btn-outline-secondary filter-btn rounded-pill px-3"
+                     data-filter="2">한식</button>
+                  <button
+                     class="btn btn-outline-secondary filter-btn rounded-pill px-3"
+                     data-filter="3">양식</button>
+                  <button
+                     class="btn btn-outline-secondary filter-btn rounded-pill px-3"
+                     data-filter="4">중식</button>
+                  <button
+                     class="btn btn-outline-secondary filter-btn rounded-pill px-3"
+                     data-filter="5">일식</button>
+                  <button
+                     class="btn btn-outline-secondary filter-btn rounded-pill px-3"
+                     data-filter="6">디저트</button>
+                  <button
+                     class="btn btn-outline-secondary filter-btn rounded-pill px-3"
+                     data-filter="7">건강식</button>
+                  <button
+                     class="btn btn-outline-secondary filter-btn rounded-pill px-3"
+                     data-filter="8">기타</button>
+               </div>
+
+               <div class="btn-group shadow-sm">
+                  <button class="btn btn-light border btn-sm sort-btn active"
+                     data-sort="LATEST">최신순</button>
+                  <button class="btn btn-light border btn-sm sort-btn"
+                     data-sort="VIEWS">조회순</button>
+                  <button class="btn btn-light border btn-sm sort-btn"
+                     data-sort="LIKES">좋아요순</button>
+               </div>
+            </div>
+         </div>
+
+         <div class="row g-4" id="recipeCards">
+            <div class="status-msg">레시피 목록을 불러오는 중입니다...</div>
+         </div>
+         <div id="nlpLoading" class="status-msg text-center my-4"
+            style="display: none;">🤖 자연어를 이해하는 중입니다... 잠시만 기다려주세요</div>
+
+
+         <div class="mt-5 text-center" id="pagingArea"></div>
+      </div>
+      <script
+         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+      <script th:inline="javascript">
+         const ctx = ""; 
+         let currentCategory = null;
+         let currentPage = 1;
+         let currentSort = "LATEST";
+         let lastScrollTop = 0;
+         let isSearching = false;
+
+/* =====================================================
+ * 검색 실행
+ * ===================================================== */
+ function runSearch(page) {
+     if (isSearching) return;
+     isSearching = true;
+
+     lastScrollTop = window.pageYOffset;
+     currentPage = page || 1;
+
+     const keyword = $("#search").val()?.trim() || "";
+     const searchField = $("#searchField").val() || "ALL";
+     const fields = (searchField === "ALL")
+       ? ["TITLE", "AUTHOR", "DESCRIPTION"]
+       : [searchField];
+
+     // 🔄 자연어 처리 중 표시 ON
+     $("#nlpLoading").show();
+     $("#recipeCards").empty(); // 이전 결과 제거
+
+     $.ajax({
+       url: ctx + "/recipes/search",
+       type: "GET",
+       data: {
+         page: currentPage,
+         keyword,
+         fields,
+         sort: currentSort,
+         category: currentCategory,
+         ajax: true
+       },
+       traditional: true,
+       dataType: "json",
+       success(res) {
+         renderRecipeList(res.list || []);
+         renderPaging(res.paging);
+         $("#recipeCount").text(res.totalCount ?? res.list?.length ?? 0);
+
+         requestAnimationFrame(() => {
+           window.scrollTo(0, lastScrollTop);
+         });
+       },
+       complete() {
+         // 🔄 자연어 처리 중 표시 OFF
+         $("#nlpLoading").hide();
+         isSearching = false;
+       }
+     });
+   }
+
+
+/* =====================================================
+ * 카드 + 모달 렌더링 (인분 표시 추가 버전)
+ * ===================================================== */
+function renderRecipeList(list) {
+    $("#recipeCards").empty();
+
+    if (!list.length) {
+        $("#recipeCards").html('<div class="status-msg">조건에 맞는 레시피가 없습니다. 😥</div>');
+        return;
+    }
+
+    list.forEach(r => {
+        const imgPath = r.image ? ctx + "/upload/" + r.image : "https://via.placeholder.com/300x200?text=No+Image";
+        const diffClass = r.difficulty === "쉬움" ? "difficulty-easy" : r.difficulty === "보통" ? "difficulty-medium" : "difficulty-hard";
+
+        $("#recipeCards").append(`
+            <div class="col-sm-6 col-md-4 col-lg-3">
+                <div class="recipe-card shadow-sm" data-recipe-id="${r.recipeId}">
+                    <div class="position-relative">
+                        <img src="${imgPath}" alt="${r.title}">
+                        <div class="position-absolute top-0 start-0 m-2">
+                             <span class="category-label">${r.categoryName || "기타"}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-content">
+                        <h5 class="mb-2 fw-bold text-dark text-truncate">${r.title}</h5>
+                        <p class="recipe-description mb-3">${r.description || "맛있는 레시피 설명을 확인해보세요."}</p>
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="difficulty-box ${diffClass}">${r.difficulty || "보통"}</span>
+                            <div class="small text-muted">
+                                <span>👁 ${r.views || 0}</span>
+                                <button class="like-inline-btn ms-2 ${r.likedByMe === 1 ? 'liked' : ''}" 
+                                        data-recipe-id="${r.recipeId}" data-liked="${r.likedByMe}" 
+                                        onclick="toggleLike(event, this)">
+                                    <span class="heart">${r.likedByMe === 1 ? '♥' : '♡'}</span>
+                                    <span class="like-count">${r.likeCount ?? 0}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-top d-flex justify-content-between align-items-center">
+                            <div class="small text-secondary">
+                                <span class="me-2">⏱ ${r.cookTime || 0}분</span>
+                                <span>👨‍🍳 ${r.servings || 0}인분</span>
+                            </div>
+                            <span class="small fw-bold" style="color:#8B4513;">by ${r.nickname || "작성자"}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ${renderRecipeModal(r, diffClass, imgPath)}
+        `);
+    });
+}
+/* =====================================================
+ * 좋아요 토글 및 CSRF 설정
+ * ===================================================== */
+const token = document.querySelector('meta[name="_csrf"]')?.content;
+const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+function toggleLike(e, btn) {
+    e.stopPropagation();
+    const isAuth = document.querySelector('meta[name="isAuthenticated"]').content === 'true';
+
+    if (!isAuth) {
+        alert("로그인 후 따뜻한 관심을 표현현해주세요! ❤️");
+        return;
+    }
+
+    const recipeId = btn.dataset.recipeId;
+    const heart = btn.querySelector('.heart');
+    const countSpan = btn.querySelector('.like-count');
+    const liked = btn.dataset.liked === '1';
+    const url = liked ? '/recipes/unlike' : '/recipes/like';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            [header]: token
+        },
+        body: `recipeId=${recipeId}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            heart.textContent = liked ? '♡' : '♥';
+            countSpan.textContent = data.likes;
+            btn.dataset.liked = liked ? '0' : '1';
+            btn.classList.toggle('liked', !liked);
+        }
+    });
+}
+
+/* =====================================================
+ * 모달 생성 (재료 및 조리 순서 포함)
+ * ===================================================== */
+function renderRecipeModal(r, diffClass, imgPath) {
+    const ingredientsHtml = (r.ingredients || []).map(i => {
+        const mId = i.materialid || i.materialId || i.id || null;
+        const detailUrl = mId ? `/material/materialdetail?materialid=${mId}` : `/material/materialdetail?title=${encodeURIComponent(i.ingreName)}`;
+        return `<li class="mb-2"><a href="${detailUrl}" class="text-decoration-none fw-bold" style="color:#8B4513;">[재료] ${i.ingreName} - ${i.ingreNum}</a></li>`;
+    }).join("");
+
+    const stepsHtml = (r.steps || []).map((s, idx) => `
+        <div class="mb-3 p-3 rounded" style="background:#FDF5E6;">
+            <strong style="color:#8B4513;">STEP ${idx + 1}</strong>
+            <p class="mb-0 mt-1">${s.stepDesc || ""}</p>
+        </div>`).join("");
+    
+ // --- 여기부터 리뷰 목록 생성 코드 추가 ---
+    const reviewsHtml = (r.reviews && r.reviews.length > 0) ? r.reviews.map(rev => `
+        <div class="py-2 border-bottom">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-bold small" style="color:#8B4513;">${rev.nickname || '익명'}</span>
+                <span class="text-warning small">★ ${rev.rating}</span>
+            </div>
+            <p class="small mb-0 text-secondary">${rev.commentText}</p>
+        </div>
+    `).join("") : `<p class="text-muted small py-3 text-center">등록된 리뷰가 없습니다.</p>`;
+    // --- 여기까지 ---
+    
+
+    return `
+    <div class="modal fade" id="recipeModal${r.recipeId}" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-header border-0 pb-0 d-flex flex-column align-items-start">
+                    <h5 class="modal-title fw-bold">
+                        <a href="/recipes/detail?recipeId=${r.recipeId}" class="text-dark text-decoration-none">${r.title}</a>
+                    </h5>
+                    <small class="text-muted" style="font-size: 0.8rem; margin-top: 5px;">제목을 클릭하면 상세보기로 이동합니다.</small>
+                    <button class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <img src="${imgPath}" class="modal-img shadow-sm mb-3" style="width:100%; border-radius:15px;" alt="${r.title}">
+                    <div class="mb-3">
+                        <span class="category-label me-2">${r.categoryName || "기타"}</span>
+                        <span class="difficulty-box ${diffClass}">${r.difficulty || "보통"}</span>
+                    </div>
+                    <p class="lead" style="font-size:1rem;">${r.description || ""}</p>
+                    <hr>
+                    <h6>🧂 준비 재료</h6>
+                    <ul class="list-unstyled">${ingredientsHtml || "<li>정보 없음</li>"}</ul>
+                    <hr>
+                    <h6>🍳 조리 순서</h6>
+                    ${stepsHtml || "<p>정보 없음</p>"}
+                    
+                    <hr class="mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold mb-0">💬 리뷰 목록</h6>
+                        <a href="/recipes/detail?recipeId=${r.recipeId}" class="small text-muted text-decoration-none">상세보기 ></a>
+                    </div>
+                    <div class="review-section p-3 rounded" style="background-color: #f8f9fa;">
+                        ${reviewsHtml}
+                    </div>
+                    
+                    
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+
+
+
+
+
+/* =====================================================
+ * 페이징 처리
+ * ===================================================== */
+ function renderPaging(p){
+     $("#pagingArea").empty();
+     if(!p || p.pagetotal <= 1) return;
+
+     const ul = $('<ul class="pagination justify-content-center"></ul>');
+
+     // 이전 버튼
+     if(p.current > 1){
+       ul.append(`<li class="page-item"><a class="page-link" data-page="${p.current-1}">이전</a></li>`);
+     }
+
+     // 페이지 번호 (항상 끝번호까지 표시)
+     for(let i = 1; i <= p.pagetotal; i++){
+       ul.append(`
+         <li class="page-item ${i === p.current ? "active" : ""}">
+           <a class="page-link" data-page="${i}">${i}</a>
+         </li>
+       `);
+     }
+
+     // 다음 버튼
+     if(p.current < p.pagetotal){
+       ul.append(`<li class="page-item"><a class="page-link" data-page="${p.current+1}">다음</a></li>`);
+     }
+
+     $("#pagingArea").append(ul);
+   }
+
+/* =====================================================
+ * 이벤트 바인딩
+ * ===================================================== */
+ $(function(){
+
+     runSearch(1);
+
+     $(document).on('click', '.recipe-card', function (e) {
+
+        // ❤️ 좋아요 버튼 클릭이면 무시
+        if ($(e.target).closest('.like-inline-btn').length > 0) {
+          return;
+        }
+
+        const recipeId = $(this).data('recipe-id');
+        const modalEl = document.getElementById('recipeModal' + recipeId);
+
+        if (!modalEl) return;
+
+        // 🔑 기존 인스턴스 재사용 (중요)
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (!modal) {
+          modal = new bootstrap.Modal(modalEl, {
+            backdrop: true,
+            keyboard: true
+          });
+        }
+
+        modal.show();
+      });
+      
+   //레시피 등록 버튼 처리
+     $("#registerBtn").on("click", function () {
+       const isAuth = document
+         .querySelector('meta[name="isAuthenticated"]')
+         .content === 'true';
+
+       if (!isAuth) {
+         alert("로그인 후 레시피를 등록할 수 있습니다.");
+         location.href = "/users/login";
+         return;
+       }
+
+       location.href = "/recipes/register";
+     });
+
+     
+   //===============================
+   //모달 닫힐 때 backdrop 강제 정리
+   //===============================
+   $(document).on('hidden.bs.modal', '.modal', function () {
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open');
+    $('body').css('overflow', '');
+   });
+
+
+
+     
+   $("#searchBtn").on("click", () => runSearch(1));
+
+   //❌ mousedown 제거
+   //$("#searchBtn").on("mousedown", e => e.preventDefault());
+
+   //✅ focus만 제거
+   $("#searchBtn").on("focus", function () {
+   this.blur();
+   });
+
+     $("#search").on("keypress", function (e) {
+        if (e.which === 13) {
+          runSearch(1);
+        }
+      });
+
+     $("#searchField").on("change", function (e) {
+        e.preventDefault();
+        runSearch(1);
+      });
+
+
+     $(".filter-btn").on("click", function(){
+       $(".filter-btn").removeClass("active");
+       $(this).addClass("active");
+       currentCategory = $(this).data("filter") || null;
+       runSearch(1);
+     });
+
+     $(".sort-btn").on("click", function(){
+       $(".sort-btn").removeClass("active");
+       $(this).addClass("active");
+       currentSort = $(this).data("sort");
+       runSearch(1);
+     });
+     
+     $(document).on("click", "#pagingArea .page-link", function(e){
+       e.preventDefault();
+       const page = $(this).data("page");
+       if(page) runSearch(page);
+     });
+     $(document).on('click', '.recipe-card', function (e) {
+
+        // ❤️ 좋아요 버튼 클릭이면 무시
+        if ($(e.target).closest('.like-inline-btn').length > 0) {
+          return;
+        }
+
+        const recipeId = $(this).data('recipe-id');
+        const modalEl = document.getElementById('recipeModal' + recipeId);
+
+        if (modalEl) {
+          const modal = new bootstrap.Modal(modalEl);
+          modal.show();
+        }
+      });
+	  
+	  //===============================
+	     //추천 기능 (수정 완료)
+	     //===============================
+	  
+	  $("#recommendBtn").click(function() {
+	                // [수정] HTML에 선언된 실제 ID 값인 recCategory와 recKeyword를 사용해야 합니다.
+	                let category = $("#recCategory").val(); 
+	                let keyword = $("#recKeyword").val();
+					let highQuality = $("#highQualityToggle").is(":checked");
+
+	                $.ajax({
+	                    url: "/recipes/recommend",
+	                    type: "GET",
+	                    data: { category: category, keyword: keyword,highQuality: highQuality },
+	                    success: function(data) {
+							if (!data || !data.recipeId) {
+							                // 토글이 켜져 있을 때 데이터가 없으면 메시지를 더 구체적으로 줄 수 있습니다.
+							                let msg = highQuality ? "조건에 맞는 '인기' 레시피가 없습니다. 😥" : "조건에 맞는 레시피가 없습니다. 😥";
+							                alert(msg);
+							                $("#recommendDisplay").hide();
+							                return;
+							            }
+							
+
+	                        // 데이터 채우기
+	                        $("#recTitle").text(data.title);
+	                        $("#recNickname").text(data.nickname || "익명");
+	                        // [수정] ID가 recCategoryName인 요소에 카테고리를 넣어야 합니다.
+	                        $("#recCategoryName").text(data.categoryName || "기타");
+	                        $("#recViews").text(data.views || 0);
+	                        
+	                        // 이미지 처리
+	                        let imgPath = data.image ? "/upload/" + data.image : "https://via.placeholder.com/300x200?text=No+Image";
+	                        $("#recImage").attr("src", imgPath);
+	                        
+	                        // 링크 연결
+	                        $("#recLink").attr("href", "/recipes/detail?recipeId=" + data.recipeId);
+	                        
+	                        // 결과창 노출
+	                        $("#recommendDisplay").slideDown();
+	                        
+	                        // 추천 결과 위치로 화면 스크롤
+	                       // $('html, body').animate({
+	                         //   scrollTop: $("#recommendDisplay").offset().top - 150
+	                        //}, 500);
+	                    },
+	                    error: function(xhr) {
+	                        alert("조건에 부합하는 레시피가 없습니다. 다른 검색어를 시도해보세요!");
+	                        $("#recommendDisplay").hide();
+	                    }
+	                });
+	            });
+   });
+  
+      </script>
+   </div>
+</body>
+</html>

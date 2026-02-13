@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head lang="ko">
+    <meta charset="UTF-8">
+    <title>Insert title here</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="mb-3">
+        <label for="postcode" class="form-label">우편번호</label>
+        <div class="input-group">
+            <input type="text" class="form-control" id="postcode" name="postcode" placeholder="우편번호" readonly>
+            <button type="button" class="btn btn-outline-primary" onclick="execDaumPostcode()">
+                우편번호 찾기
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="address" class="form-label">주소</label>
+        <input type="text" class="form-control" id="address" name="address" placeholder="주소" readonly>
+    </div>
+
+    <div class="mb-3">
+        <label for="detailAddress" class="form-label">상세주소</label>
+        <input type="text" class="form-control" id="detailAddress" name="detailAddress" placeholder="상세주소" required>
+        <div class="invalid-feedback">
+            상세주소를 입력해주세요.
+        </div>
+    </div>
+
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <script>
+        function execDaumPostcode() {
+            new daum.Postcode({
+                oncomplete: function (data) {
+                    console.log(data);
+                    document.getElementById("postcode").value = data.zonecode;
+                    document.getElementById("address").value = data.address;
+                    document.getElementById("detailAddress").focus();
+                }
+            }).open();
+        }
+    </script>
+</div>
+
+</body>
+</html>

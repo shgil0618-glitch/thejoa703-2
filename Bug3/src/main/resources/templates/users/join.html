@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+
+<head>
+	<meta charset="UTF-8">
+    <style>
+        .join-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 40px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(139, 69, 19, 0.1);
+            border: 1px solid #EADDCA;
+        }
+        .join-title {
+            color: #4A3728;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #5D4037;
+            margin-bottom: 8px;
+        }
+        .form-control:focus {
+            border-color: #D2B48C;
+            box-shadow: 0 0 0 0.25rem rgba(210, 180, 140, 0.25);
+        }
+        .btn-theme {
+            background-color: #8B4513 !important;
+            border-color: #8B4513 !important;
+            color: #FDF5E6 !important;
+            font-weight: bold;
+            padding: 12px;
+        }
+        .btn-theme:hover {
+            background-color: #6F4E37 !important;
+        }
+        .btn-outline-theme {
+            border-color: #8B4513 !important;
+            color: #8B4513 !important;
+        }
+        .btn-outline-theme:hover {
+            background-color: #8B4513 !important;
+            color: #fff !important;
+        }
+        .iddouble_result {
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+        /* 리캡차 중앙 정렬용 */
+        .g-recaptcha {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<div layout:fragment="content" class="container">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+    <div class="join-container">
+        <div th:if="${successMessage}" class="alert alert-info alert-dismissible fade show border-0 shadow-sm">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <h2 class="join-title">회원가입</h2>
+
+        <form th:action="@{/users/join}" method="post" enctype="multipart/form-data" id="joinForm">
+            <input type="hidden" name="provider" value="local">
+
+            <div class="mb-3">
+                <label class="form-label">이메일 계정</label>
+                <input type="email" id="email" name="email" class="form-control form-control-lg" placeholder="example@email.com" required>
+                <div class="iddouble_result"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">비밀번호</label>
+                <input type="password" name="password" class="form-control form-control-lg" placeholder="영문, 숫자 포함 8자 이상" required>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">닉네임</label>
+                    <input type="text" name="nickname" class="form-control" placeholder="활동 명칭" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">휴대폰 번호</label>
+                    <input type="text" name="mobile" class="form-control" placeholder="01012345678">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">주소 정보</label>
+                <div class="input-group mb-2">
+                    <input type="text" id="postcode" name="postcode" class="form-control" placeholder="우편번호" readonly>
+                    <button type="button" class="btn btn-outline-theme" onclick="execDaumPostcode()">우편번호 찾기</button>
+                </div>
+                <input type="text" id="address" name="address" class="form-control mb-2" placeholder="기본 주소" readonly>
+                <input type="text" id="detailAddress" name="detailAddress" class="form-control" placeholder="상세 주소를 입력하세요">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">프로필 이미지</label>
+                <input type="file" name="file" class="form-control">
+                <div class="form-text text-muted">나를 잘 표현하는 사진을 올려주세요.</div>
+            </div>
+
+            <div class="mb-4 d-flex justify-content-center">
+                <div class="g-recaptcha" data-sitekey="6LeW5DosAAAAAOmKtyZUF5QtwSUon52ApfMTSxsT"></div>
+            </div>
+
+            <button type="submit" class="btn btn-theme w-100 shadow-sm mb-3">회원가입 완료</button>
+        </form>
+
+        <p class="text-center mt-3 text-muted">
+            이미 계정이 있으신가요? <a th:href="@{/users/login}" class="text-decoration-none fw-bold" style="color: #8B4513;">로그인</a>
+        </p>
+    </div>
+
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <script>
+        function execDaumPostcode() {
+            new daum.Postcode({
+                oncomplete: function (data) {
+                    document.getElementById("postcode").value = data.zonecode;
+                    document.getElementById("address").value = data.address;
+                    document.getElementById("detailAddress").focus();
+                }
+            }).open();
+        }
+
+        // 이메일 중복체크
+        $("#email").on("keyup", function () {
+            let email = $(this).val().trim();
+            if (!email) {
+                $(".iddouble_result").html("");
+                return;
+            }
+
+            $.get("iddouble", {email: email, provider: "local"}, function (res) {
+                $(".iddouble_result").html(
+                    res.cnt === 1
+                        ? "<span class='text-danger'>● 이미 사용 중인 이메일입니다.</span>"
+                        : "<span class='text-success'>● 사용 가능한 이메일입니다.</span>"
+                );
+            });
+        });
+
+        // 폼 전송 시 리캡차 검증
+        document.getElementById('joinForm').addEventListener('submit', function(e) {
+            var response = grecaptcha.getResponse();
+            if (response.length == 0) {
+                alert("로봇이 아님을 확인해 주세요. 😊");
+                e.preventDefault();
+                return false;
+            }
+        });
+    </script>
+</div>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+   xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+   layout:decorate="~{fragments/layout}">
+<head>
+    <style>
+        /* [색감 정의] 메인: #8B4513(브라운), 서브: #D2B48C(베이지), 배경: #FDF5E6 */
+        
+        .review-page-container {
+            color: #4A3728;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        /* 1. 상단 타이틀 및 버튼 */
+        .fw-bold { color: #4A3728; }
+        .btn-primary { 
+            background-color: #8B4513 !important; 
+            border-color: #8B4513 !important; 
+            color: #FDF5E6 !important;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover { background-color: #6F4E37 !important; transform: translateY(-2px); }
+        .btn-secondary { 
+            background-color: #D2B48C !important; 
+            border-color: #D2B48C !important; 
+            color: #fff !important;
+        }
+
+        /* 2. 평점 요약 섹션 */
+        .summary-box {
+            border: 1px solid #EADDCA !important;
+            background-color: #ffffff !important;
+            box-shadow: 0 4px 15px rgba(139, 69, 19, 0.05) !important;
+        }
+        .text-warning { color: #D2B48C !important; } /* 별점 색상 */
+
+        /* 3. AI 요약하기 버튼 및 결과 */
+        #btn-summary {
+            border-color: #D2B48C !important;
+            color: #8B4513 !important;
+            background: #fff;
+            transition: all 0.3s;
+        }
+        #btn-summary:hover {
+            background-color: #FDF5E6 !important;
+            border-color: #8B4513 !important;
+        }
+        
+        #summary-result {
+            background-color: #FDF5E6 !important; /* 베이지 배경 */
+            border: 1px solid #EADDCA !important;
+            border-left: 5px solid #8B4513 !important; /* 메인 브라운 포인트 */
+            color: #4A3728 !important;
+        }
+        .text-info { color: #8B4513 !important; } /* AI 아이콘/텍스트 색상 변경 */
+        .bg-info { background-color: #8B4513 !important; } /* GPT 배지 색상 변경 */
+
+        /* 4. 리뷰 카드 */
+        .card {
+            border: 1px solid #EADDCA !important;
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-3px); }
+        .review-content { line-height: 1.7; color: #333 !important; }
+        
+        /* 번역 버튼 */
+        .btn-auto-translate {
+            color: #8B4513 !important;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* 5. 댓글/답글 영역 */
+        .bg-light { background-color: #F9F4F0 !important; } /* 연한 베이지 배경 */
+        .text-success { color: #6F4E37 !important; } /* 답글 아이콘 색상 */
+        .border-bottom { border-color: #EADDCA !important; }
+        
+        /* 답글 왼쪽 구분선 */
+        .reply-border {
+            border-left: 2px solid #D2B48C !important;
+        }
+
+        /* 6. 페이지네이션 */
+        .pagination .page-link {
+            color: #8B4513 !important;
+            border-color: #D2B48C !important;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #8B4513 !important;
+            border-color: #8B4513 !important;
+            color: #FDF5E6 !important;
+        }
+        
+        /* 입력창 포커스 */
+        .form-control:focus {
+            border-color: #8B4513 !important;
+            box-shadow: 0 0 0 0.2rem rgba(139, 69, 19, 0.15) !important;
+        }
+    </style>
+</head>
+
+<div layout:fragment="content" class="container mt-5 review-page-container">
+
+   <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold">
+        <i class="bi bi-chat-left-heart-fill text-danger me-2"></i>리뷰 목록
+    </h4>
+    <div class="d-flex gap-2">
+        <a th:href="@{/reviews/comment(recipeId=${recipeId})}"
+           class="btn btn-primary fw-bold shadow-sm">리뷰 쓰기</a>
+        <a th:href="@{/recipes/detail(recipeId=${recipeId})}"
+           class="btn btn-secondary fw-bold shadow-sm">돌아가기</a>
+    </div>
+</div>
+
+   <div class="alert alert-white border shadow-sm p-4 mb-4 summary-box"
+      style="border-radius: 15px;">
+      <h6 class="text-muted fw-bold mb-3">평점 및 리뷰</h6>
+      <div class="d-flex align-items-center">
+         <i class="bi bi-star-fill text-warning me-2"
+            style="font-size: 1.5rem;"></i> <span
+            class="display-6 fw-bold text-dark"
+            th:text="${avgRating != null ? #numbers.formatDecimal(avgRating, 1, 1) : '0.0'}">0.0</span>
+         <span class="ms-2 text-muted fs-5">/ 5.0</span>
+         <div class="mx-3 border-start" style="height: 30px; opacity: 0.5;"></div>
+         <div class="d-flex align-items-center text-muted fs-5">
+            <i class="bi bi-chat-right-text me-2"></i> <span>전체 리뷰 <span class="fw-bold text-dark" th:text="${totalReviewCount}">0</span>개</span>
+         </div>
+      </div>
+   </div>
+
+   <div class="mb-3 text-end">
+      <button type="button" id="btn-summary"
+         class="btn btn-outline-info fw-bold shadow-sm"
+         style="border-radius: 10px;">
+         <i class="bi bi-stars"></i> ✨ AI 리뷰 3줄 요약하기
+      </button>
+   </div>
+
+   <div id="summary-result" style="display: none; padding: 20px; margin-bottom: 25px; border-radius: 15px;">
+      <div class="d-flex align-items-center mb-2">
+         <strong class="text-info"><i class="bi bi-robot me-2"></i>AI 요약 결과</strong> 
+         <span class="ms-auto badge bg-info text-white">GPT-3.5 Analysis</span>
+      </div>
+      <p id="summary-content" class="mb-0 text-dark" style="line-height: 1.6;"></p>
+   </div>
+
+   <div th:each="review : ${reviewList}"
+      class="card mb-4 border-0 shadow-sm" style="border-radius: 15px;">
+      <div class="card-body p-4">
+         <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+               <h6 class="fw-bold mb-1" th:text=" ${review.nickname}">작성자</h6>
+               <div class="text-warning">
+                  <i th:each="i : ${review.rating > 0 ? #numbers.sequence(1, review.rating) : {}}"
+                     class="bi bi-star-fill"></i> 
+                  <i th:each="i : ${review.rating < 5 ? #numbers.sequence(review.rating + 1, 5) : {}}"
+                     class="bi bi-star text-secondary"></i>
+               </div>
+            </div>
+            
+            <div class="d-flex gap-2" th:if="${#authentication.principal != 'anonymousUser' and (#authentication.principal.user.appUserId == review.appUserId or #authorization.expression('hasRole(''ROLE_ADMIN'')'))}">
+               <a th:href="@{/reviews/edit(reviewId=${review.reviewId})}"
+                  class="btn btn-sm btn-outline-primary border-0"><i class="bi bi-pencil-square"></i></a>
+               <form th:action="@{/reviews/delete}" method="post"
+                  onsubmit="return confirm('리뷰를 삭제할까요?');">
+                  <input type="hidden" name="reviewId" th:value="${review.reviewId}">
+                  <input type="hidden" name="recipeId" th:value="${recipeId}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                     <i class="bi bi-trash"></i>
+                  </button>
+               </form>
+            </div>
+         </div>
+
+         <p class="card-text text-dark review-content" style="white-space: pre-wrap;" th:text="${review.commentText}">리뷰 내용</p>
+
+         <button type="button" class="btn btn-sm btn-link p-0 btn-auto-translate" style="text-decoration: none;">
+            <i class="bi bi-translate"></i> 번역보기
+         </button>
+         <div class="translated-box mt-2 p-3 bg-light rounded"
+            style="display: none; font-size: 0.9em; color: #555; border: 1px dashed #D2B48C;"></div>
+
+         <div class="bg-light p-3 rounded mt-3">
+            <h6 class="fw-bold small mb-3">
+                댓글 <span class="text-primary" th:text="${review.comments != null ? #lists.size(review.comments) : 0}">0</span>
+            </h6>
+
+            <div th:each="reply : ${review.comments}"
+               class="mb-2 border-bottom pb-2"
+               th:classappend="${reply.parentId != 0} ? 'reply-border' : ''"
+               th:style="${reply.parentId != 0} ? 'margin-left: 30px; padding-left: 15px;' : ''">
+               <div class="d-flex justify-content-between align-items-center">
+                  <span class="fw-bold small"> 
+                     <i th:if="${reply.parentId != 0}" class="bi bi-arrow-return-right text-success me-1"></i> 
+                     <span th:text="${review.nickname}">작성자</span>
+                  </span>
+                  
+                  <div class="d-flex gap-2 align-items-center">
+                     <a th:if="${reply.parentId == 0}"
+                        th:href="@{/reviews/reply(parentId=${reply.commentId}, reviewId=${review.reviewId}, recipeId=${recipeId})}"
+                        class="text-success small"><i class="bi bi-reply-all"></i></a> 
+                     
+                     <th:block th:if="${#authentication.principal != 'anonymousUser' and (#authentication.principal.user.appUserId == reply.appUserId or #authorization.expression('hasRole(''ROLE_ADMIN'')'))}">
+                        <a th:href="@{/reviews/editComment(commentId=${reply.commentId}, recipeId=${recipeId})}"
+                           class="text-primary small"><i class="bi bi-pencil-square"></i></a>
+                        <form th:action="@{/reviews/deleteComment}" method="post" style="display: inline;">
+                           <input type="hidden" name="commentId" th:value="${reply.commentId}"> 
+                           <input type="hidden" name="recipeId" th:value="${recipeId}">
+                           <button type="submit" class="btn btn-link text-danger p-0 small border-0 text-decoration-none">×</button>
+                        </form>
+                     </th:block>
+                  </div>
+               </div>
+               <p class="mb-0 small mt-1" th:text="${reply.content}">댓글 내용</p>
+            </div>
+
+            <form th:action="@{/reviews/addComment}" method="post" class="mt-3">
+               <input type="hidden" name="reviewId" th:value="${review.reviewId}">
+               <input type="hidden" name="recipeId" th:value="${recipeId}">
+               <div class="input-group input-group-sm">
+                  <input type="text" name="content" class="form-control" placeholder="댓글을 입력하세요..." required>
+                  <button class="btn btn-primary" type="submit">등록</button>
+               </div>
+            </form>
+         </div>
+      </div>
+   </div>
+   
+   <div class="d-flex justify-content-center mt-4 mb-5" th:if="${totalPages > 0}">
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                <li class="page-item" th:classappend="${currentPage <= 1} ? 'disabled'">
+                    <a class="page-link" th:href="@{/reviews/list(recipeId=${recipeId}, page=${currentPage - 1})}">이전</a>
+                </li>
+                <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" 
+                    th:classappend="${i == currentPage} ? 'active'">
+                    <a class="page-link" th:href="@{/reviews/list(recipeId=${recipeId}, page=${i})}" th:text="${i}"></a>
+                </li>
+                <li class="page-item" th:classappend="${currentPage >= totalPages} ? 'disabled'">
+                    <a class="page-link" th:href="@{/reviews/list(recipeId=${recipeId}, page=${currentPage + 1})}">다음</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script th:inline="javascript">
+        $(document).ready(function() {
+            // AI 요약 기능 로직 유지
+            $("#btn-summary").click(function() {
+                const recipeId = [[${recipeId}]];
+                $("#summary-result").fadeIn();
+                $("#summary-content").html('<div class="spinner-border spinner-border-sm text-info" role="status"></div> 분석 중입니다...');
+                $.ajax({
+                    type: "GET",
+                    url: "/reviews/api/summary",
+                    data: { recipeId: recipeId },
+                    success: function(response) { $("#summary-content").text(response); },
+                    error: function() { alert("요약 중 오류가 발생했습니다."); $("#summary-result").hide(); }
+                });
+            });
+
+            // 번역 기능 로직 유지
+            $(document).on("click", ".btn-auto-translate", function() {
+                const $btn = $(this);
+                const $content = $btn.siblings(".review-content").text();
+                const $resultBox = $btn.siblings(".translated-box");
+                if ($resultBox.is(":visible")) { $resultBox.slideUp(); return; }
+                $resultBox.text("번역 중...").slideDown();
+                $.ajax({
+                    type: "GET",
+                    url: "/reviews/api/translate/smart",
+                    data: { text: $content },
+                    success: function(response) { $resultBox.html("<strong>🌐 번역 결과:</strong><br>" + response); },
+                    error: function() { alert("번역 실패"); $resultBox.hide(); }
+                });
+            });
+        });
+    </script>
+</div>
+</html>

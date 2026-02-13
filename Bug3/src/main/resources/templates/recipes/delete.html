@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<div layout:fragment="content" class="container mt-5">
+
+    <h2 class="mb-4">레시피 삭제</h2>
+
+    <p>정말로 <strong th:text="${dto.title}"></strong> 레시피를 삭제하시겠습니까?</p>
+
+    <form th:action="@{/recipes/delete}" method="post">
+        <!-- CSRF -->
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="recipeId" th:value="${dto.recipeId}"/>
+
+        <div class="mt-3">
+            <button type="submit" class="btn btn-danger">삭제</button>
+            <a th:href="@{/recipes/detail(recipeId=${dto.recipeId})}" class="btn btn-secondary">취소</a>
+        </div>
+    </form>
+
+</div>
+</html>

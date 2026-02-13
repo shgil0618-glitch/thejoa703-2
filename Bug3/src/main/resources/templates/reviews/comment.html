@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+
+<div layout:fragment="content">
+    <div class="review-write-wrapper py-5" style="font-family: 'Pretendard', sans-serif !important; color: #4A3728 !important;">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                
+                <div class="card border-0" style="border: 1px solid #EADDCA !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(139, 69, 19, 0.08) !important; background-color: #ffffff !important; overflow: hidden;">
+                    <div class="card-body p-5">
+                        
+                        <h3 class="fw-bold mb-3 text-center" style="color: #8B4513 !important;">
+                            <i class="bi bi-chat-heart"></i> 리뷰 작성
+                        </h3>
+                        <p class="text-muted text-center mb-5">요리는 즐거우셨나요? 당신의 미식 경험을 나누어주세요.</p>
+
+                        <form id="reviewForm" th:action="@{/reviews/comment}" method="post">
+                            <input type="hidden" name="recipeId" th:value="${recipeId}">
+                            <input type="hidden" id="rating" name="rating">
+
+                            <div class="mb-5 text-center">
+                                <label class="form-label fw-bold d-block mb-3" style="color: #4A3728 !important;">맛과 레시피의 친절도는 어땠나요?</label>
+                                <div id="starRating" class="d-flex justify-content-center gap-2" style="font-size: 3rem; cursor: pointer;">
+                                    <i class="bi bi-star" data-value="1" style="color: #D2B48C !important; transition: transform 0.2s;"></i>
+                                    <i class="bi bi-star" data-value="2" style="color: #D2B48C !important; transition: transform 0.2s;"></i>
+                                    <i class="bi bi-star" data-value="3" style="color: #D2B48C !important; transition: transform 0.2s;"></i>
+                                    <i class="bi bi-star" data-value="4" style="color: #D2B48C !important; transition: transform 0.2s;"></i>
+                                    <i class="bi bi-star" data-value="5" style="color: #D2B48C !important; transition: transform 0.2s;"></i>
+                                </div>
+                                <div id="ratingError" class="text-danger small d-none mt-2">⭐ 별점을 선택해주세요</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold" style="color: #4A3728 !important;">상세 후기</label>
+                                <textarea class="form-control" id="commentText" name="commentText" rows="6" maxlength="300"
+                                          style="border: 2px solid #EADDCA !important; border-radius: 12px !important; padding: 15px !important;"
+                                          placeholder="이 레시피를 따라하며 느꼈던 점이나 나만의 팁을 남겨주세요!"></textarea>
+                                <div class="text-end small text-muted mt-2">
+                                    <span id="textCount" class="fw-bold" style="color: #8B4513 !important;">0</span> / 300자
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-3 d-md-flex justify-content-center mt-4">
+                                <a href="javascript:history.back()" class="btn" 
+                                   style="border: 2px solid #D2B48C !important; color: #8B4513 !important; border-radius: 12px !important; padding: 12px 40px !important; font-weight: bold !important; background-color: transparent !important;">취소</a>
+                                <button type="submit" class="btn" 
+                                        style="background-color: #8B4513 !important; color: #FDF5E6 !important; border-radius: 12px !important; padding: 12px 50px !important; font-weight: bold !important; border: none !important;">등록하기</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="successToast" class="toast align-items-center text-white border-0" style="background-color: #8B4513 !important;" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">리뷰가 성공적으로 등록되었습니다! 🎉</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="script">
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const stars = document.querySelectorAll('#starRating i');
+        const ratingInput = document.getElementById('rating');
+        const ratingError = document.getElementById('ratingError');
+
+        // 별 채우기 함수 (색상 강제 변경 포함)
+        function fillStars(value) {
+            stars.forEach(s => {
+                const starValue = parseInt(s.dataset.value);
+                if (starValue <= value) {
+                    s.classList.replace('bi-star', 'bi-star-fill');
+                    s.style.setProperty('color', '#8B4513', 'important'); // 채워진 별 색상
+                } else {
+                    s.classList.replace('bi-star-fill', 'bi-star');
+                    s.style.setProperty('color', '#D2B48C', 'important'); // 빈 별 색상
+                }
+            });
+        }
+
+        stars.forEach(star => {
+            star.addEventListener('mouseover', () => fillStars(star.dataset.value));
+            star.addEventListener('mouseout', () => fillStars(ratingInput.value || 0));
+            star.addEventListener('click', () => {
+                ratingInput.value = star.dataset.value;
+                fillStars(star.dataset.value);
+                ratingError.classList.add('d-none');
+            });
+        });
+
+        const textarea = document.getElementById('commentText');
+        const counter = document.getElementById('textCount');
+        textarea.addEventListener('input', () => {
+            counter.textContent = textarea.value.length;
+        });
+
+        document.getElementById('reviewForm').addEventListener('submit', function (e) {
+            if (!ratingInput.value) {
+                e.preventDefault();
+                ratingError.classList.remove('d-none');
+                return;
+            }
+            const toastEl = document.getElementById('successToast');
+            if (toastEl) {
+                const toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+    });
+</script>
+</th:block>
+</html>

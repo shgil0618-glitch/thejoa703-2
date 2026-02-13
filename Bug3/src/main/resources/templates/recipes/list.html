@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragments/layout}">
+<head lang="ko">
+<meta charset="UTF-8">
+<meta name="_csrf" th:content="${_csrf.token}" />
+<meta name="_csrf_header" th:content="${_csrf.headerName}" />
+<title>레시피 목록</title>
+<style>
+    .list-wrapper {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 30px;
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    .table-container {
+        margin-top: 20px;
+        overflow-x: auto;
+    }
+    .table thead {
+        background-color: #fcf8f3;
+        border-top: 2px solid #8b4513;
+    }
+    .table th {
+        color: #5d4037;
+        font-weight: 600;
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .table td {
+        vertical-align: middle;
+        text-align: center;
+    }
+    .recipe-thumb {
+        width: 80px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #eee;
+    }
+    .recipe-title {
+        text-decoration: none;
+        color: #333;
+        font-weight: 600;
+        transition: color 0.2s;
+    }
+    .recipe-title:hover {
+        color: #8b4513;
+    }
+    .like-btn {
+        text-decoration: none !important;
+        color: #ff4757 !important;
+        font-weight: bold;
+    }
+    .heart {
+        font-size: 1.2rem;
+        margin-right: 2px;
+    }
+    .search-box {
+        background: #fdf5e6;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+    }
+    .pagination .page-link {
+        color: #8b4513;
+        border-radius: 5px;
+        margin: 0 2px;
+    }
+    .pagination .active .page-link {
+        background-color: #8b4513;
+        border-color: #8b4513;
+        color: #fff;
+    }
+</style>
+</head>
+<body>
+<div layout:fragment="content" class="container">
+    <div class="list-wrapper">
+        
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div>
+                <h2 class="fw-bold" style="color: #4a3728;">📋 레시피 목록 <small class="text-muted fs-6">(관리자)</small></h2>
+                <p class="text-muted mb-0">등록된 모든 레시피를 관리하고 검토할 수 있습니다.</p>
+            </div>
+            <div sec:authorize="isAuthenticated()">
+                <a th:href="@{/recipes/register}" class="btn btn-warning shadow-sm fw-bold" 
+                   style="background-color: #8b4513; border: none; color: #fff;">✍️ 새 레시피 등록</a>
+            </div>
+        </div>
+
+        <div th:if="${result}" class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle me-2"></i><span th:text="${result}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="search-box shadow-sm">
+            <form th:action="@{/recipes/list}" method="get" class="row g-2 justify-content-center">
+                <div class="col-auto">
+                    <select name="searchField" class="form-select">
+                        <option value="ALL" th:selected="${searchField == 'ALL'}">전체보기</option>
+                        <option value="TITLE" th:selected="${searchField == 'TITLE'}">레시피 제목</option>
+                        <option value="AUTHOR" th:selected="${searchField == 'AUTHOR'}">작성자 닉네임</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="keyword" class="form-control" placeholder="어떤 요리를 찾으시나요?" th:value="${keyword}" />
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-dark px-4">검색</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>이미지</th>
+                        <th>제목</th>
+                        <th>카테고리</th>
+                        <th>작성자</th>
+                        <th>조회</th>
+                        <th>상태</th>
+                        <th>인기</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="recipe, stat : ${list}">
+                        <td class="text-muted" th:text="${paging.listtotal - (paging.rStart - 1) - stat.index}"></td>
+                        <td>
+                            <img th:if="${recipe.image}"
+                                 th:src="@{/upload/{img}(img=${recipe.image})}"
+                                 class="recipe-thumb" alt="thumb" />
+                            <div th:unless="${recipe.image}" class="bg-light d-inline-block rounded" style="width:80px; height:60px; line-height:60px; font-size:12px; color:#ccc;">No Image</div>
+                        </td>
+                        <td class="text-start">
+                            <a th:href="@{/recipes/detail(recipeId=${recipe.recipeId})}"
+                               class="recipe-title" th:text="${recipe.title}"></a>
+                        </td>
+                        <td><span class="badge rounded-pill bg-light text-dark border" th:text="${recipe.categoryName}"></span></td>
+                        <td th:text="${recipe.nickname}"></td>
+                        <td th:text="${#numbers.formatInteger(recipe.views, 0, 'COMMA')}"></td>
+                        <td>
+                            <span th:if="${recipe.status == 'PUBLIC'}" class="badge bg-success-subtle text-success border border-success-subtle">공개</span>
+                            <span th:if="${recipe.status == 'PRIVATE'}" class="badge bg-danger-subtle text-danger border border-danger-subtle">비공개</span>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-link like-btn p-0" th:data-recipe-id="${recipe.recipeId}">
+                                <span class="heart" th:text="${recipe.likedByMe == 1 ? '♥' : '♡'}"></span>
+                                <span class="like-count" th:text="${recipe.likeCount} ?: 0">0</span>
+                            </button>
+                        </td>
+                        <td>
+                            <form th:action="@{/recipes/moderation-check/{id}(id=${recipe.recipeId})}" method="post">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 11px;">
+                                    AI 검사
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(list)}">
+                        <td colspan="9" class="py-5 text-muted">검색된 레시피가 없습니다.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:each="p : ${#numbers.sequence(paging.start, paging.end)}"
+                    th:classappend="${p == paging.current} ? 'active'">
+                    <a class="page-link shadow-sm"
+                       th:href="@{/recipes/list(page=${p}, keyword=${param.keyword}, searchField=${param.searchField})}"
+                       th:text="${p}"></a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const token = document.querySelector('meta[name="_csrf"]').content;
+        const header = document.querySelector('meta[name="_csrf_header"]').content;
+
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const recipeId = btn.dataset.recipeId;
+                const heart = btn.querySelector('.heart');
+                const countSpan = btn.querySelector('.like-count');
+                const liked = heart.textContent === '♥';
+                const url = liked ? '/recipes/unlike' : '/recipes/like';
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        [header]: token
+                    },
+                    body: `recipeId=${recipeId}`
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        heart.textContent = liked ? '♡' : '♥';
+                        countSpan.textContent = data.likes;
+                    } else {
+                        alert('좋아요 처리 실패');
+                    }
+                });
+            });
+        });
+    });
+    </script>
+</div>
+</body>
+</html>

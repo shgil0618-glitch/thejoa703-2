@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragments/layout}">
+
+<body>
+
+<div layout:fragment="content">
+
+  <div class="container my-5">
+
+    <h2>재료 전체 목록 (관리자)</h2>
+
+    <sec:authorize access="hasRole('ROLE_ADMIN')">
+      <a th:href="@{/material/materialinsert}" class="btn btn-primary">재료 추가하기</a>
+    </sec:authorize>
+
+    <table class="table table-striped table-bordered table-hover mt-3">
+      <thead>
+      <tr>
+        <th>번호</th>
+        <th>이미지</th>
+        <th>이름</th>
+        <th>계절</th>
+        <th>온도</th>
+        <th>칼로리</th>
+        <sec:authorize access="hasRole('ROLE_ADMIN')">
+          <th>관리</th>
+        </sec:authorize>
+      </tr>
+      </thead>
+
+      <tbody>
+      <tr th:each="dto, vs : ${list}">
+        <td th:text="${vs.count}">1</td>
+
+        <td>
+          <img th:src="@{/upload/{img}(img=${dto.imageurl})}"
+               style="width:60px;"
+               alt="img"
+               onerror="this.src='/upload/default.png';"/>
+        </td>
+
+        <td th:text="${dto.title}">재료명</td>
+        <td th:text="${dto.season}">계절</td>
+        <td th:text="${dto.temperature}">온도</td>
+        <td th:text="${dto.calories100g}">칼로리</td>
+
+        <sec:authorize access="hasRole('ROLE_ADMIN')">
+          <td sec:authorize="isAuthenticated()">
+		  <p class="text-end m-0">
+		    <span th:if="${#authorization.expression('hasRole(''ROLE_ADMIN'')') or dto.writer == #authentication.name}">
+		      <a th:href="@{/material/materialedit(materialid=${dto.materialid})}" class="btn btn-sm btn-outline-warning">수정</a>
+		      &nbsp;
+		      <a th:href="@{/material/materialdelete(materialid=${dto.materialid})}"
+		         class="btn btn-sm btn-outline-danger"
+		         onclick="return confirm('삭제할까요?');">삭제</a>
+		    </span>
+		  </p>
+		</td>
+        </sec:authorize>
+      </tr>
+      </tbody>
+
+      <tfoot>
+      <tr>
+        <td colspan="7">
+          <ul class="pagination justify-content-center">
+
+            <!-- 이전 -->
+            <li class="page-item" th:if="${paging.start > 10}">
+              <a class="page-link" th:href="@{/material/materiallist(pstartno=${paging.start-1})}">이전</a>
+            </li>
+
+            <!-- 페이지 번호 -->
+            <li class="page-item"
+                th:each="i : ${#numbers.sequence(paging.start, paging.end)}"
+                th:classappend="${i == paging.current} ? 'active'">
+              <a class="page-link" th:href="@{/material/materiallist(pstartno=${i})}" th:text="${i}">1</a>
+            </li>
+
+            <!-- 다음 -->
+            <li class="page-item" th:if="${paging.pagetotal > paging.end}">
+              <a class="page-link" th:href="@{/material/materiallist(pstartno=${paging.end+1})}">다음</a>
+            </li>
+
+          </ul>
+        </td>
+      </tr>
+      </tfoot>
+
+    </table>
+  </div>
+
+</div>
+
+</body>
+</html>

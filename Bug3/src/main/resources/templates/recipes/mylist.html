@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+   xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+   xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+   layout:decorate="~{fragments/layout}">
+<head>
+<meta charset="UTF-8">
+<meta name="_csrf" th:content="${_csrf.token}" />
+<meta name="_csrf_header" th:content="${_csrf.headerName}" />
+<title>내 레시피 목록 - 오늘 뭐먹지?</title>
+<style>
+.mylist-container {
+   max-width: 1000px;
+   margin: 50px auto;
+   padding: 0 15px;
+}
+
+.mylist-title {
+   color: #4A3728;
+   font-weight: 700;
+   margin-bottom: 30px;
+   display: flex;
+   align-items: center;
+   gap: 10px;
+}
+
+.recipe-table-card {
+   background: #fff;
+   border-radius: 20px;
+   box-shadow: 0 8px 25px rgba(139, 69, 19, 0.05);
+   border: 1px solid #EADDCA;
+   overflow: hidden;
+}
+
+.table {
+   margin-bottom: 0;
+}
+
+.table thead {
+   background-color: #FDF5E6;
+   border-bottom: 2px solid #EADDCA;
+}
+
+.table thead th {
+   color: #8B4513;
+   font-weight: 600;
+   padding: 15px;
+   border: none;
+}
+
+.table tbody td {
+   padding: 15px;
+   vertical-align: middle;
+   color: #5D4037;
+   border-color: #f8f1e7;
+}
+/* 테이블 행 호버 효과 */
+.table tbody tr {
+   transition: background-color 0.2s ease;
+   cursor: pointer;
+}
+
+.table tbody tr:hover {
+   background-color: #fffaf0;
+}
+/* 썸네일 이미지 */
+.recipe-thumb {
+   width: 80px;
+   height: 80px;
+   border-radius: 12px;
+   object-fit: cover;
+   border: 1px solid #EADDCA;
+}
+/* 상태 배지 */
+.badge-status {
+   padding: 5px 12px;
+   border-radius: 20px;
+   font-size: 0.8rem;
+   font-weight: 600;
+}
+
+.status-public {
+   background-color: #E8F5E9;
+   color: #2E7D32;
+}
+
+.status-private {
+   background-color: #FFEBEE;
+   color: #C62828;
+}
+
+/* 버튼 스타일 */
+.btn-theme {
+   background-color: #8B4513 !important;
+   color: #fff !important;
+   border-radius: 10px;
+   padding: 10px 20px;
+   font-weight: bold;
+}
+
+.btn-outline-theme {
+   border: 2px solid #8B4513 !important;
+   color: #8B4513 !important;
+   border-radius: 10px;
+   padding: 8px 20px;
+   font-weight: bold;
+   text-decoration: none;
+}
+
+.btn-outline-theme:hover {
+   background-color: #8B4513 !important;
+   color: #fff !important;
+}
+
+.recipe-link {
+   color: #4A3728;
+   text-decoration: none;
+   font-weight: 600;
+}
+
+.recipe-link:hover {
+   color: #8B4513;
+   text-decoration: underline;
+}
+
+.like-inline-btn {
+   background: transparent;
+   border: none;
+   cursor: pointer;
+   display: inline-flex;
+   align-items: center;
+   gap: 4px;
+   color: #6c757d;
+}
+
+.like-inline-btn .heart {
+   font-size: 1.1rem;
+}
+
+.like-inline-btn.liked, .like-inline-btn.liked .heart {
+   color: #dc3545;
+}
+
+.like-inline-btn:hover {
+   transform: scale(1.1);
+}
+</style>
+</head>
+<body>
+   <div layout:fragment="content" class="mylist-container">
+      <div th:if="${result}">
+         <div class="alert alert-info border-0 shadow-sm mb-4" role="alert"
+            th:text="${result}"></div>
+      </div>
+
+      <h2 class="mylist-title">📖 내가 작성한 레시피</h2>
+
+      <div class="recipe-table-card">
+    <table class="table text-center">
+        <thead>
+            <tr>
+                <th>대표 이미지</th>
+                <th class="text-start">제목</th>
+                <th>카테고리</th>
+                <th>조회수</th>
+                <th>좋아요</th>
+                <th>상태</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="recipe : ${list}"
+                th:onclick="|location.href='@{/recipes/detail(recipeId=${recipe.recipeId})}'|">
+
+                <!-- 대표 이미지 -->
+                <td>
+                    <img th:if="${recipe.image != null}"
+                         th:src="@{/upload/{img}(img=${recipe.image})}" alt="대표 이미지"
+                         class="recipe-thumb">
+                    <img th:if="${recipe.image == null}"
+                         th:src="@{/upload/no.png}" alt="대표 이미지" class="recipe-thumb">
+                </td>
+
+                <!-- 제목 -->
+                <td class="text-start">
+                    <a th:href="@{/recipes/detail(recipeId=${recipe.recipeId})}"
+                       th:text="${recipe.title}" class="recipe-link"></a>
+                </td>
+
+                <!-- 카테고리 -->
+                <td>
+                    <span class="badge bg-light text-dark border"
+                          th:text="${recipe.categoryName}">카테고리</span>
+                </td>
+
+                <!-- 조회수 -->
+                <td th:text="'👁 ' + ${recipe.views}">0</td>
+
+                <!-- 좋아요 버튼 -->
+                <td onclick="event.stopPropagation();">
+                    <button class="like-inline-btn"
+                            th:classappend="${recipe.likedByMe == 1} ? ' liked' : ''"
+                            th:data-recipe-id="${recipe.recipeId}"
+                            th:data-liked="${recipe.likedByMe}"
+                            onclick="toggleLike(event, this)">
+                        <span class="heart" th:text="${recipe.likedByMe == 1} ? '♥' : '♡'">♡</span>
+                        <span class="like-count" th:text="${recipe.likeCount ?: 0}">0</span>
+                    </button>
+                </td>
+
+                <!-- 상태 -->
+                <td>
+                    <span th:if="${recipe.status eq 'PUBLIC'}"
+                          class="badge-status status-public">공개</span>
+                    <span th:if="${recipe.status eq 'PRIVATE'}"
+                          class="badge-status status-private">비공개</span>
+                </td>
+            </tr>
+
+            <!-- 작성한 레시피가 없는 경우 -->
+            <tr th:if="${#lists.isEmpty(list)}">
+                <td colspan="6" class="py-5 text-muted">
+                    아직 작성한 레시피가 없네요. 첫 레시피를 등록해보세요! 😊
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- toggleLike 함수 재사용 -->
+<script>
+const token = document.querySelector('meta[name="_csrf"]')?.content;
+const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+function toggleLike(e, btn) {
+    e.stopPropagation();
+
+    const recipeId = btn.dataset.recipeId;
+    const heart = btn.querySelector('.heart');
+    const countSpan = btn.querySelector('.like-count');
+    const liked = btn.dataset.liked === '1';
+    const url = liked ? '/recipes/unlike' : '/recipes/like';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            [header]: token
+        },
+        body: `recipeId=${recipeId}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            btn.dataset.liked = liked ? '0' : '1';
+            btn.classList.toggle('liked', !liked);
+            heart.textContent = liked ? '♡' : '♥';
+            countSpan.textContent = data.likes;
+        }
+    });
+}
+</script>
+
+   </div>
+
+</body>
+</html>

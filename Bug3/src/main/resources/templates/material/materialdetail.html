@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{fragments/layout}">
+<body>
+	<div layout:fragment="content">
+		<div class="material-detail-container">
+			<h2 class="material-title" th:text="${dto.title}">재료명</h2>
+
+			<div class="material-image-container">
+				<img class="material-image"
+					th:src="@{/upload/{img}(img=${dto.imageurl})}"
+					th:alt="${dto.title}" onerror="this.src='/upload/default.png';" />
+
+				<div class="shop-btn-container">
+					<a
+						th:href="@{https://search.shopping.naver.com/search/all(query=${dto.title})}"
+						target="_blank" class="btn-naver-shopping"> <img
+						src="https://ssl.pstatic.net/static/shopping/customer/common/favicon.ico">
+						<!-- 네이버 공식 아이콘이던데요..--> <span>네이버 쇼핑에서 구매하기</span>
+					</a>
+				</div>
+			</div>
+
+			<div class="material-info">
+				<div>
+					📂 카테고리: <b th:text="${dto.category}">기타</b>
+				</div>
+				<div>
+					🌤 계절: <b th:text="${dto.season}">-</b>
+				</div>
+				<div>
+					🌡 온도: <b th:text="${dto.temperature}">-</b>
+				</div>
+				<div>
+					🔥 칼로리(100g): <b th:text="${dto.calories100g}">-</b> kcal
+				</div>
+				<div style="font-size: 0.9em; color: #666; margin-top: 10px;">
+					마지막 업데이트: <span th:text="${dto.updated_at}">-</span>
+				</div>
+			</div>
+
+			<div class="material-section">
+				<h3 style="color: #00c73c;">📊 최근 검색 트렌드 분석</h3>
+				<div class="trend-chart-container">
+					<canvas id="trendChart"></canvas>
+				</div>
+				<p style="font-size: 0.85em; color: #888; margin-top: 10px;">*
+					네이버 데이터랩의 월별 검색 비중 데이터입니다.</p>
+			</div>
+
+			<div class="material-section">
+				<h3>📌 효능</h3>
+				<p th:text="${dto.efficacy}">효능 내용</p>
+			</div>
+
+			<div class="material-section">
+				<h3>📌 구입 가이드</h3>
+				<p th:text="${dto.buyguide}">구입 가이드 내용</p>
+			</div>
+
+			<div class="material-section">
+				<h3>📌 손질 방법</h3>
+				<p th:text="${dto.trimguide}">손질 방법 내용</p>
+			</div>
+
+			<div class="back-btn-container">
+				<a th:href="@{/material/materiallist}" class="btn btn-secondary">목록으로</a>
+			</div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const materialId = [[${dto.materialid}]];
+            const keyword = [[${dto.title}]];
+
+            fetch(`/api/trend?materialId=${materialId}&keyword=${keyword}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.results && data.results[0]) {
+                        drawTrendChart(data.results[0], keyword);
+                    }
+                })
+                .catch(err => console.error('트렌드 로드 실패:', err));
+
+            function drawTrendChart(trendData, labelName) {
+                const ctx = document.getElementById('trendChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: trendData.data.map(item => item.period),
+                        datasets: [{
+                            label: labelName + ' 검색 비율',
+                            data: trendData.data.map(item => item.ratio),
+                            borderColor: '#00c73c',
+                            backgroundColor: 'rgba(0, 199, 60, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+	</div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+
+<body>
+
+<div layout:fragment="content">
+
+  <div class="container my-5">
+    <h2 th:text="${dto.title}">재료명</h2>
+
+    <!-- 이미지: 업로드 폴더 기준으로 표시 -->
+    <img th:src="@{/upload/{img}(img=${dto.imageurl})}"
+         alt="img"
+         style="width:200px; margin-bottom:15px;"
+         onerror="this.src='/upload/default.png';" />
+
+    <p><strong>계절:</strong> <span th:text="${dto.season}">-</span></p>
+    <p><strong>온도:</strong> <span th:text="${dto.temperature}">-</span></p>
+    <p><strong>칼로리(100g):</strong> <span th:text="${dto.calories100g}">-</span></p>
+
+    <h3>📌 효능</h3>
+    <p th:text="${dto.efficacy}" style="white-space: pre-line;">-</p>
+
+    <h3>📌 구입 가이드</h3>
+    <p th:text="${dto.buyguide}" style="white-space: pre-line;">-</p>
+
+    <h3>📌 손질 방법</h3>
+    <p th:text="${dto.trimguide}" style="white-space: pre-line;">-</p>
+
+    <h3>📌 보관 방법</h3>
+    <p th:text="${dto.storeguide}" style="white-space: pre-line;">-</p>
+  </div>
+
+</div>
+
+</body>
+</html>

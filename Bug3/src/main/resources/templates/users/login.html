@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+	layout:decorate="~{fragments/layout}">
+<head>
+<meta charset="UTF-8">
+<meta name="_csrf" th:content="${_csrf.token}" />
+<meta name="_csrf_header" th:content="${_csrf.headerName}" />
+<title>로그인 - 오늘 뭐먹지?</title>
+<style>
+/* 테마 스타일 설정 */
+.login-container {
+	max-width: 450px;
+	margin: 60px auto;
+	padding: 40px;
+	background: #ffffff;
+	border-radius: 20px;
+	box-shadow: 0 10px 30px rgba(139, 69, 19, 0.1);
+	border: 1px solid #EADDCA;
+}
+
+.login-title {
+	color: #4A3728;
+	font-weight: 700;
+	text-align: center;
+	margin-bottom: 30px;
+}
+
+/* 인풋 필드 스타일 */
+.form-control:focus {
+	border-color: #D2B48C;
+	box-shadow: 0 0 0 0.25rem rgba(210, 180, 140, 0.25);
+}
+
+/* 메인 버튼 스타일 */
+.btn-primary-theme {
+	background-color: #8B4513 !important;
+	border-color: #8B4513 !important;
+	color: #FDF5E6 !important;
+	font-weight: bold;
+	padding: 12px;
+	transition: all 0.3s;
+}
+
+.btn-primary-theme:hover {
+	background-color: #6F4E37 !important;
+	transform: translateY(-2px);
+}
+
+/* 소셜 로그인 이미지 보정 */
+.social-login-img {
+	width: 120px;
+	height: 50px;
+	object-fit: contain;
+	border-radius: 25%;
+	transition: all 0.2s ease-in-out;
+	cursor: pointer;
+	image-rendering: -webkit-optimize-contrast;
+	filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.social-login-img:hover {
+	transform: translateY(-3px);
+	filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.15));
+}
+
+/* 아이콘 사이 간격 및 정렬 */
+.social-group {
+	display: flex;
+	justify-content: center;
+	gap: 25px;
+	margin-top: 15px;
+}
+
+/* 링크 스타일 */
+.find-links .btn-link {
+	color: #8B4513;
+	text-decoration: none;
+	font-size: 0.9rem;
+}
+
+.find-links .btn-link:hover {
+	color: #A0522D;
+	text-decoration: underline;
+}
+
+/* 모달 스타일 보정 */
+.modal-content {
+	border-radius: 15px;
+	border: none;
+}
+
+.modal-header {
+	background-color: #FDF5E6;
+	border-bottom: 1px solid #EADDCA;
+	border-radius: 15px 15px 0 0;
+}
+</style>
+</head>
+<body>
+	<div layout:fragment="content" class="container">
+
+		<div class="login-container">
+			<div th:if="${successMessage}"
+				class="alert alert-info alert-dismissible fade show border-0 shadow-sm mb-4"
+				role="alert">
+				<span th:text="${successMessage}"></span>
+				<button type="button" class="btn-close" data-bs-dismiss="alert"
+					aria-label="Close"></button>
+			</div>
+
+			<div th:if="${errorMessage}"
+				class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4"
+				style="border-radius: 12px; background-color: #FFF5F5; color: #D32F2F;"
+				role="alert">
+				<div class="d-flex align-items-center">
+					<i class="bi bi-exclamation-octagon-fill me-2" style="font-size: 1.1rem;"></i>
+					<div>
+						<strong th:text="${errorMessage}"></strong>
+						<div th:if="${errorMessage.contains('정지')}" class="mt-1 small" style="color: #666;">
+							관리자에게 문의하세요.
+						</div>
+					</div>
+				</div>
+				<button type="button" class="btn-close" data-bs-dismiss="alert"
+					aria-label="Close"></button>
+			</div>
+
+			<h2 class="login-title">로그인</h2>
+
+			<div sec:authorize="isAnonymous()">
+				<form th:action="@{/users/loginProc}" method="post"
+					class="needs-validation" novalidate>
+					<div class="mb-3">
+						<label for="username" class="form-label fw-bold text-muted small">이메일 계정</label> 
+						<input type="text" id="username" name="username"
+							class="form-control form-control-lg"
+							placeholder="example@email.com" required>
+					</div>
+					<div class="mb-4">
+						<label for="password" class="form-label fw-bold text-muted small">비밀번호</label>
+						<input type="password" id="password" name="password"
+							class="form-control form-control-lg" placeholder="비밀번호를 입력하세요"
+							required>
+					</div>
+					<button type="submit" class="btn btn-primary-theme w-100 shadow-sm">로그인</button>
+				</form>
+
+				<div class="mt-4 text-center find-links">
+					<button type="button" class="btn btn-link" data-bs-toggle="modal"
+						data-bs-target="#findEmailModal">이메일 찾기</button>
+					<span class="text-muted">|</span>
+					<button type="button" class="btn btn-link" data-bs-toggle="modal"
+						data-bs-target="#resetPasswordModal">비밀번호 재설정</button>
+				</div>
+
+				<div class="mt-5">
+					<div class="d-flex align-items-center mb-4">
+						<div class="flex-grow-1 border-bottom"></div>
+						<div class="mx-3 text-muted small">간편 소셜 로그인</div>
+						<div class="flex-grow-1 border-bottom"></div>
+					</div>
+					<div class="d-flex justify-content-center gap-4">
+						<a th:href="@{/oauth2/authorization/kakao}"><img
+							src="/images/kakao.png" alt="카카오 로그인" class="social-login-img"></a>
+						<a th:href="@{/oauth2/authorization/naver}"><img
+							src="/images/naver.png" alt="네이버 로그인" class="social-login-img"></a>
+						<a th:href="@{/oauth2/authorization/google}"><img
+							src="/images/google.png" alt="구글 로그인" class="social-login-img"></a>
+					</div>
+				</div>
+			</div>
+
+			<div sec:authorize="isAuthenticated()" class="text-center">
+				<p class="alert alert-light border">이미 로그인한 상태입니다.</p>
+				<a th:href="@{/users/mypage}" class="btn btn-primary-theme px-5">마이페이지로
+					이동</a>
+			</div>
+		</div>
+
+		<div class="modal fade" id="findEmailModal" tabindex="-1"
+			aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content shadow">
+					<form id="findEmailForm">
+						<div class="modal-header">
+							<h5 class="modal-title fw-bold">이메일 찾기</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"
+								aria-label="Close"></button>
+						</div>
+						<div class="modal-body p-4">
+							<label for="phoneNumber" class="form-label fw-bold small">가입
+								시 등록한 휴대폰 번호</label> <input type="text" id="phoneNumber"
+								name="phoneNumber" class="form-control"
+								placeholder="01012345678" required>
+							<div id="findEmailResult" class="mt-3 alert"
+								style="display: none;"></div>
+						</div>
+						<div class="modal-footer border-0">
+							<button type="submit" class="btn btn-primary-theme px-4">찾기</button>
+							<button type="button" class="btn btn-light border px-4"
+								data-bs-dismiss="modal">취소</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="resetPasswordModal" tabindex="-1"
+			aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content shadow">
+					<form id="resetPasswordForm">
+						<div class="modal-header">
+							<h5 class="modal-title fw-bold">비밀번호 재설정</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"
+								aria-label="Close"></button>
+						</div>
+						<div class="modal-body p-4">
+							<div class="mb-3">
+								<label for="resetEmail" class="form-label fw-bold small">이메일
+									계정</label> <input type="text" id="resetEmail" name="email"
+									class="form-control" placeholder="example@email.com" required>
+							</div>
+							<div class="mb-3">
+								<label for="phoneNumber2" class="form-label fw-bold small">휴대폰
+									번호</label> <input type="text" id="phoneNumber2" name="phoneNumber"
+									class="form-control" placeholder="01012345678" required>
+							</div>
+							<div class="mb-1">
+								<label for="newPassword" class="form-label fw-bold small">새
+									비밀번호</label> <input type="password" id="newPassword" name="newPassword"
+									class="form-control" placeholder="영문, 숫자 포함 8자 이상" required>
+							</div>
+							<div id="resetPwdResult" class="mt-3 alert"
+								style="display: none;"></div>
+						</div>
+						<div class="modal-footer border-0">
+							<button type="submit" class="btn btn-primary-theme px-4">변경하기</button>
+							<button type="button" class="btn btn-light border px-4"
+								data-bs-dismiss="modal">취소</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+		
+		<script th:inline="javascript">
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+        // 이메일 찾기 로직
+        document.getElementById('findEmailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const resultDiv = document.getElementById('findEmailResult');
+
+            fetch('/users/find-email', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    [csrfHeader]: csrfToken 
+                },
+                body: new URLSearchParams({ 'phoneNumber': phoneNumber })
+            })
+            .then(res => res.json())
+            .then(data => {
+                resultDiv.style.display = 'block';
+                resultDiv.innerText = data.message;
+                resultDiv.className = data.success ? 'mt-3 alert alert-success' : 'mt-3 alert alert-danger';
+            })
+            .catch(err => console.error('Error:', err));
+        });
+
+        // 비밀번호 재설정 로직
+        document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value;
+            const phoneNumber = document.getElementById('phoneNumber2').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const resultDiv = document.getElementById('resetPwdResult');
+
+            fetch('/users/reset-password', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    [csrfHeader]: csrfToken 
+                },
+                body: new URLSearchParams({ 
+                    'email': email, 
+                    'phoneNumber': phoneNumber, 
+                    'newPassword': newPassword 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                resultDiv.style.display = 'block';
+                resultDiv.innerText = data.message;
+                resultDiv.className = data.success ? 'mt-3 alert alert-success' : 'mt-3 alert alert-danger';
+            })
+            .catch(err => console.error('Error:', err));
+        });
+    </script>
+	</div>
+</body>
+</html>

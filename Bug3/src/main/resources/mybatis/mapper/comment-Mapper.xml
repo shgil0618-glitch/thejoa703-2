@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thejoa703.dao.CommentDao">
+
+    <!-- 리뷰 ID로 댓글 조회 -->
+    <select id="findByReviewId" resultType="com.thejoa703.dto.CommentDto">
+        SELECT 
+            c.COMMENT_ID   AS commentId,
+            c.REVIEW_ID    AS reviewId,
+            b.APPUSERID    AS appUserId,
+            c.CONTENT      AS content,
+            c.CREATED_AT   AS createdAt,
+            c.UPDATED_AT   AS updatedAt,
+            c.PARENT_ID    AS parentId
+        FROM COMMENTS c
+        JOIN BUG3 b ON c.APP_USER_ID = b.APPUSERID
+        WHERE c.REVIEW_ID = #{reviewId}
+        ORDER BY NVL(c.PARENT_ID, c.COMMENT_ID), c.CREATED_AT ASC
+    </select>
+
+    <!-- 댓글 등록 -->
+    <insert id="insertComment">
+        INSERT INTO COMMENTS (
+            COMMENT_ID, REVIEW_ID, APP_USER_ID, CONTENT, PARENT_ID, CREATED_AT
+        ) VALUES (
+            seq_comment.NEXTVAL, #{reviewId}, #{appUserId}, #{content}, 
+            #{parentId, jdbcType=INTEGER}, SYSDATE
+        )
+    </insert>
+
+    <!-- 댓글 삭제 -->
+    <delete id="deleteComment">
+        DELETE FROM COMMENTS WHERE COMMENT_ID = #{commentId}
+    </delete>
+
+    <!-- 댓글 수정 -->
+    <update id="updateComment">
+        UPDATE COMMENTS 
+        SET CONTENT = #{content}, UPDATED_AT = SYSDATE
+        WHERE COMMENT_ID = #{commentId}
+    </update>
+
+    <!-- 댓글 단건 조회 -->
+    <select id="findById" resultType="com.thejoa703.dto.CommentDto">
+        SELECT 
+            c.COMMENT_ID AS commentId,
+            c.CONTENT    AS content,
+            c.REVIEW_ID  AS reviewId,
+            c.PARENT_ID  AS parentId
+        FROM COMMENTS c
+        WHERE c.COMMENT_ID = #{commentId}
+    </select>
+
+</mapper>

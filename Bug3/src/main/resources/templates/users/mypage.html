@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <meta charset="UTF-8">
+    <title>마이페이지 - 오늘 뭐먹지?</title>
+    <style>
+        .mypage-container { max-width: 900px; margin: 50px auto; padding: 0 15px; }
+        .profile-card {
+            background: #fff; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(139, 69, 19, 0.08);
+            border: 1px solid #EADDCA; overflow: hidden; display: flex; flex-wrap: wrap;
+        }
+        .profile-img-section {
+            background: #FDF5E6; padding: 40px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; border-right: 1px solid #EADDCA;
+            flex: 1; min-width: 300px;
+        }
+        .profile-img-circle {
+            width: 180px; height: 180px; border-radius: 50%;
+            object-fit: cover; border: 5px solid #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+        .profile-info-section { padding: 40px; flex: 2; min-width: 350px; }
+        .info-row { display: flex; border-bottom: 1px solid #f8f1e7; padding: 12px 0; }
+        .info-label { width: 120px; font-weight: bold; color: #8B4513; }
+        .info-value { color: #4A3728; }
+        .badge-provider { background-color: #DEB887; color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; }
+        .btn-update { background-color: #8B4513 !important; color: #fff !important; border: none; padding: 10px 25px; border-radius: 8px; font-weight: bold; transition: 0.3s; }
+        .btn-update:hover { background-color: #6F4E37 !important; }
+        .btn-admin { background-color: #D2B48C !important; color: #4A3728 !important; border: none; padding: 10px 25px; border-radius: 8px; font-weight: bold; }
+        .btn-delete { color: #A9A9A9; text-decoration: underline; font-size: 0.9rem; background: none; border: none; }
+        .btn-delete:hover { color: #dc3545; }
+        .admin-badge {
+            background-color: #3e2723; color: #D2B48C;
+            font-size: 0.75rem; padding: 2px 8px; border-radius: 5px;
+            border: 1px solid #D2B48C; vertical-align: middle; margin-left: 8px;
+        }
+        /* 모달 스타일 */
+        .modal-content { border-radius: 20px; border: none; overflow: hidden; }
+        .modal-header { background-color: #FDF5E6; border-bottom: 1px solid #EADDCA; }
+    </style>
+</head>
+<body>
+    <div layout:fragment="content" class="mypage-container">
+        <input type="hidden" id="main_csrf" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+        <h2 class="mb-4 fw-bold" style="color: #4A3728;">마이페이지</h2>
+
+        <div th:if="${successMessage}" class="alert alert-info alert-dismissible fade show border-0 shadow-sm">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div sec:authorize="isAuthenticated()">
+            <div class="profile-card">
+                <div class="profile-img-section">
+                    <img th:if="${dto != null and dto.ufile != null}" th:src="@{'/upload/' + ${dto.ufile}}" class="profile-img-circle" /> 
+                    <img th:if="${dto == null or dto.ufile == null}" th:src="@{'/upload/no.png'}" class="profile-img-circle" />
+                    <div class="d-flex align-items-center justify-content-center">
+                        <h4 class="fw-bold mt-2 mb-0" th:text="${dto.nickname}">닉네임</h4>
+                        <span sec:authorize="hasRole('ADMIN')" class="admin-badge">ADMIN</span>
+                    </div>
+                    <span class="badge-provider mt-2" th:text="${dto.provider + ' 계정'}">local</span>
+                </div>
+
+                <div class="profile-info-section">
+                    <div class="info-row"><div class="info-label">이메일</div><div class="info-value" th:text="${dto.email}"></div></div>
+                    <div class="info-row"><div class="info-label">휴대폰</div><div class="info-value" th:text="${dto.mobile}"></div></div>
+                    <div class="info-row"><div class="info-label">주소</div><div class="info-value" th:text="${(dto.address ?: '') + ' ' + (dto.detailAddress ?: '')}"></div></div>
+                    <div class="info-row"><div class="info-label">가입일</div><div class="info-value" th:text="${dto.createdAt}"></div></div>
+
+                    <div class="mt-5 d-flex justify-content-between align-items-center">
+                        <div>
+                            <a th:href="@{/users/update}" class="btn btn-update me-2">정보 수정</a>
+                            <div sec:authorize="hasRole('ADMIN')" class="d-inline">
+                                <button type="button" class="btn btn-admin" onclick="openAdminModal()">회원 활동 관리</button>
+                            </div>
+                        </div>
+                        <form th:action="@{/users/delete}" method="post" onsubmit="return confirm('정말 탈퇴하시겠습니까?');">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button type="submit" class="btn btn-delete">회원 탈퇴</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="adminModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content shadow-lg">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" style="color: #8B4513;">🛠️ 전체 회원 리스트 관리</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-0" id="modalUserListContent">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2">데이터를 불러오는 중입니다...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            // 1. 모달 열기
+            function openAdminModal() {
+                const adminModal = new bootstrap.Modal(document.getElementById('adminModal'));
+                adminModal.show();
+                loadTable(1);
+            }
+
+            // 2. 테이블 로드 (AJAX)
+            window.loadTable = function(page) {
+                const keyword = document.getElementById('keywordInput') ? document.getElementById('keywordInput').value : "";
+                const url = "/admin/user_status/table?page=" + page + "&keyword=" + encodeURIComponent(keyword);
+                
+                fetch(url)
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('modalUserListContent').innerHTML = html;
+                    })
+                    .catch(error => console.error('Error:', error));
+            };
+
+            // 3. 정지 해제 처리 (전역 함수로 정의하여 Uncaught ReferenceError 해결)
+            window.handleUserAction = function(url, id) {
+                if(!confirm("해당 회원의 정지를 해제하시겠습니까?")) return;
+                
+                const csrfToken = document.getElementById('main_csrf').value;
+                const params = new URLSearchParams();
+                params.append('appUserId', id);
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRF-TOKEN': csrfToken 
+                    },
+                    body: params
+                }).then(res => res.text()).then(data => {
+                    if(data === "success") {
+                        alert("정지가 해제되었습니다.");
+                        loadTable(1); // 테이블 갱신
+                    }
+                });
+            };
+
+            // 4. 정지 처리 (전역 함수로 정의하여 Uncaught ReferenceError 해결)
+            window.handleUserSuspend = function(id) {
+                const reason = document.getElementById('reason_' + id).value;
+                const untilDate = document.getElementById('date_' + id).value;
+                const csrfToken = document.getElementById('main_csrf').value;
+
+                if(!reason || !untilDate) {
+                    alert("사유와 기한을 입력하세요.");
+                    return;
+                }
+
+                const params = new URLSearchParams();
+                params.append('appUserId', id);
+                params.append('reason', reason);
+                params.append('untilDate', untilDate);
+
+                fetch('/admin/user_status/suspend', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRF-TOKEN': csrfToken 
+                    },
+                    body: params
+                }).then(res => res.text()).then(data => {
+                    if(data === "success") {
+                        alert("정지 처리가 완료되었습니다.");
+                        loadTable(1); // 테이블 갱신
+                    }
+                });
+            };
+        </script>
+    </div>
+</body>
+</html>

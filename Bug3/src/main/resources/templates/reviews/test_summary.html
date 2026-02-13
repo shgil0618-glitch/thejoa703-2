@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 리뷰 요약 결과</title>
+    <style>
+        .summary-box {
+            background-color: #f0f8ff;
+            border-left: 5px solid #007bff;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+        .ai-badge {
+            background-color: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="summary-box">
+        <div class="ai-badge">AI Summary</div>
+        <h3>이 상품의 리뷰 요약</h3>
+        <p th:text="${aiSummary}">요약 중입니다...</p>
+    </div>
+    
+    <a th:href="@{/reviews/list(recipeId=1)}">목록으로 돌아가기</a>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{fragments/layout}">
+<!-- 	#1. layout 렌더링	 -->
+<head lang="ko">
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<div layout:fragment="content">
+		<script>
+			(function() {
+				var w = window;
+				if (w.ChannelIO) {
+					return w.console.error("ChannelIO script included twice.");
+				}
+				var ch = function() {
+					ch.c(arguments);
+				};
+				ch.q = [];
+				ch.c = function(args) {
+					ch.q.push(args);
+				};
+				w.ChannelIO = ch;
+				function l() {
+					if (w.ChannelIOInitialized) {
+						return;
+					}
+					w.ChannelIOInitialized = true;
+					var s = document.createElement("script");
+					s.type = "text/javascript";
+					s.async = true;
+					s.src = "https://cdn.channel.io/plugin/ch-plugin-web.js";
+					var x = document.getElementsByTagName("script")[0];
+					if (x.parentNode) {
+						x.parentNode.insertBefore(s, x);
+					}
+				}
+				if (document.readyState === "complete") {
+					l();
+				} else {
+					w.addEventListener("DOMContentLoaded", l);
+					w.addEventListener("load", l);
+				}
+			})();
+
+			ChannelIO('boot', {
+				"pluginKey" : "20f5fd82-7b83-4cc4-9216-29f18dc2ec11"
+			});
+		</script>
+	</div>
+	<!--    http://localhost:8484/boot001/board/list -->
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{fragments/layout}">
+<head lang="ko">
+<meta charset="UTF-8">
+<title>레시피 수정</title>
+
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+
+<style>
+    body {
+        font-family: 'Pretendard', system-ui, -apple-system, sans-serif;
+        background-color: #fcfcfc;
+        color: #4A3728;
+    }
+
+    .modify-wrapper {
+        max-width: 850px;
+        margin: 50px auto;
+        padding: 40px;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(139, 69, 19, 0.08);
+        border: 1px solid #f1e4d3;
+    }
+
+    h3.page-title {
+        color: #4A3728;
+        font-weight: 800;
+        font-size: 1.8rem;
+        margin-bottom: 40px;
+        border-bottom: 3px solid #FDF5E6;
+        padding-bottom: 15px;
+    }
+
+    .section-label {
+        font-weight: 700;
+        color: #8B4513;
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    /* 입력창 스타일 */
+    .form-control, .form-select {
+        border-radius: 12px;
+        border: 1px solid #D2B48C;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #8B4513;
+        box-shadow: 0 0 0 0.2rem rgba(139, 69, 19, 0.1);
+        outline: none;
+    }
+
+    /* 카드 및 행 스타일 */
+    .step-row, .card {
+        background-color: #FDFDFD;
+        border: 1px solid #EADDCA !important;
+        border-radius: 15px !important;
+        padding: 20px !important;
+        margin-bottom: 15px;
+    }
+
+    /* 버튼 스타일 */
+    .btn-warning {
+        background-color: #8B4513 !important;
+        border: none !important;
+        color: white !important;
+        font-weight: 700 !important;
+        padding: 12px 30px !important;
+        border-radius: 12px !important;
+    }
+
+    .btn-secondary {
+        padding: 12px 30px !important;
+        border-radius: 12px !important;
+        font-weight: 600;
+    }
+
+    .btn-outline-primary {
+        color: #8B4513 !important;
+        border-color: #8B4513 !important;
+        background: #fff !important;
+        font-weight: 600;
+    }
+
+    .btn-outline-primary:hover {
+        background: #8B4513 !important;
+        color: #fff !important;
+    }
+
+    .btn-outline-success {
+        color: #2E7D32 !important;
+        border-color: #A5D6A7 !important;
+        font-weight: 600;
+    }
+
+    .btn-outline-success:hover {
+        background: #E8F5E9 !important;
+    }
+
+    .btn-danger {
+        border-radius: 10px !important;
+    }
+
+    .mb-section {
+        margin-bottom: 35px;
+    }
+    
+    img {
+        border-radius: 12px;
+        margin-top: 10px;
+        border: 1px solid #eee;
+    }
+</style>
+</head>
+
+<body>
+
+	<div layout:fragment="content" class="container mt-5">
+        <div class="modify-wrapper">
+		    <h3 class="page-title">🍴 레시피 수정</h3>
+
+		    <form th:action="@{/recipes/modify}" method="post"
+			    enctype="multipart/form-data">
+
+                <input type="hidden" th:name="${_csrf.parameterName}"
+                    th:value="${_csrf.token}" />
+
+                <input type="hidden" name="recipeId" th:value="${recipe.recipeId}" />
+
+                <div class="mb-section">
+                    <label class="section-label">레시피 제목 *</label> 
+                    <input type="text" class="form-control" name="title" th:value="${recipe.title}" required>
+                </div>
+
+                <div class="row mb-section">
+                    <div class="col-md-6 mb-3">
+                        <label class="section-label">카테고리 *</label> 
+                        <select name="category" class="form-select" required>
+                            <option value="2" th:selected="${recipe.category == 2}">한식</option>
+                            <option value="3" th:selected="${recipe.category == 3}">양식</option>
+                            <option value="4" th:selected="${recipe.category == 4}">중식</option>
+                            <option value="5" th:selected="${recipe.category == 5}">일식</option>
+                            <option value="6" th:selected="${recipe.category == 6}">디저트</option>
+                            <option value="7" th:selected="${recipe.category == 7}">건강식</option>
+                            <option value="8" th:selected="${recipe.category == 8}">기타</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="section-label">난이도 *</label> 
+                        <select name="difficulty" class="form-select" required>
+                            <option value="쉬움" th:selected="${recipe.difficulty == '쉬움'}">쉬움</option>
+                            <option value="보통" th:selected="${recipe.difficulty == '보통'}">보통</option>
+                            <option value="어려움" th:selected="${recipe.difficulty == '어려움'}">어려움</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-section">
+                    <div class="col-md-6 mb-3">
+                        <label class="section-label">조리 시간(분)</label> 
+                        <input type="number" class="form-control" name="cookTime" th:value="${recipe.cookTime}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="section-label">인분</label> 
+                        <input type="number" class="form-control" name="servings" th:value="${recipe.servings}">
+                    </div>
+                </div>
+
+                <div class="mb-section">
+                    <label class="section-label">🖼️ 대표 이미지</label>
+                    <div class="mb-3" th:if="${recipe.image != null}">
+                        <small class="text-muted d-block mb-2">현재 이미지:</small>
+                        <img th:src="@{/upload/{img}(img=${recipe.image})}" style="max-width: 250px;">
+                    </div>
+                    <input type="file" class="form-control" name="imageFile"> 
+                    <input type="hidden" name="image" th:value="${recipe.image}">
+                </div>
+
+                <div class="mb-section">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="section-label mb-0">레시피 설명 *</label>
+                        <button type="button" class="btn btn-sm btn-outline-success" id="autoDescSimpleBtn">✨ AI 간단 설명</button>
+                    </div>
+                    <textarea class="form-control" id="description" name="description"
+                        rows="3" required th:text="${recipe.description}"></textarea>
+                </div>
+
+                <hr class="my-4" style="border-color: #EADDCA;">
+
+                <div class="mb-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <label class="section-label mb-0">🧂 재료 정보 *</label>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="addIngredientBtn">+ 재료 추가</button>
+                    </div>
+
+                    <div id="ingredientsContainer">
+                        <div class="row g-2 mb-2 ingredient-row align-items-center" th:each="ing, stat : ${ingredients}">
+                            <div class="col-5">
+                                <input class="form-control" th:name="'ingredients['+${stat.index}+'].ingreName'"
+                                    th:value="${ing.ingreName}" required>
+                            </div>
+                            <div class="col-5">
+                                <input class="form-control" th:name="'ingredients['+${stat.index}+'].ingreNum'"
+                                    th:value="${ing.ingreNum}" required>
+                            </div>
+                            <div class="col-2 d-grid">
+                                <button type="button" class="btn btn-danger btn-remove-ingre">삭제</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" style="border-color: #EADDCA;">
+
+                <div class="mb-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <label class="section-label mb-0">👨‍🍳 조리 방법 *</label>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-success me-2" id="autoStepBtn">🤖 AI 단계 생성</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="addStepBtn">+ 단계 추가</button>
+                        </div>
+                    </div>
+
+                    <div id="stepsContainer">
+                        <div class="card step-row" th:each="st, stat : ${steps}">
+                            <label class="section-label" style="font-size: 0.9rem;" th:text="${stat.index + 1} + '단계'"></label>
+                            <textarea class="form-control mb-3" th:name="'steps['+${stat.index}+'].stepDesc'" 
+                                rows="2" required th:text="${st.stepDesc}"></textarea>
+
+                            <div th:if="${st.stepImage != null}" class="mb-3">
+                                <img th:src="@{/upload/{img}(img=${st.stepImage})}" style="max-width: 200px;"> 
+                                <input type="hidden" th:name="'steps['+${stat.index}+'].stepImage'" th:value="${st.stepImage}">
+                            </div>
+
+                            <input type="file" name="stepImages" class="form-control">
+                            <div class="text-end mt-2">
+                                <button type="button" class="btn btn-sm btn-danger btn-remove-step">단계 삭제</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-section">
+                    <label class="section-label">🔗 레시피 참고 URL</label> 
+                    <input type="text" class="form-control" name="rUrl" th:value="${recipe.rUrl}">
+                </div>
+
+                <input type="hidden" name="status" value="PUBLIC">
+
+                <div class="text-center mt-5">
+                    <button type="submit" class="btn btn-warning shadow-sm">수정 저장</button>
+                    <button type="button" class="btn btn-secondary shadow-sm ms-2" onclick="saveTemp()">임시저장</button>
+                </div>
+		    </form>
+        </div>
+
+		<script>
+/* ===========================
+   기존 스크립트 로직 (변경 없음)
+=========================== */
+const ingreBox = document.getElementById('ingredientsContainer');
+const stepBox = document.getElementById('stepsContainer');
+
+function reindexIngredients(){
+  document.querySelectorAll('.ingredient-row').forEach((row, i)=>{
+    row.querySelector('[name$="ingreName"]').name = `ingredients[${i}].ingreName`;
+    row.querySelector('[name$="ingreNum"]').name  = `ingredients[${i}].ingreNum`;
+  });
+}
+
+function reindexSteps(){
+  document.querySelectorAll('.step-row').forEach((row, i)=>{
+    row.querySelector('label').textContent = `${i+1}단계`;
+    row.querySelector('textarea').name = `steps[${i}].stepDesc`;
+  });
+}
+
+// 재료 삭제 이벤트 위임
+ingreBox.onclick = e => {
+    if (e.target.classList.contains('btn-remove-ingre')) {
+        e.target.closest('.ingredient-row').remove();
+        reindexIngredients();
+    }
+};
+
+// 단계 삭제 이벤트 위임
+stepBox.onclick = e => {
+    if (e.target.classList.contains('btn-remove-step')) {
+        e.target.closest('.step-row').remove();
+        reindexSteps();
+    }
+};
+
+// 재료 추가
+document.getElementById('addIngredientBtn').onclick = () => {
+    const idx = document.querySelectorAll('.ingredient-row').length;
+    const div = document.createElement('div');
+    div.className = 'row g-2 mb-2 ingredient-row align-items-center';
+    div.innerHTML = `
+      <div class="col-5">
+        <input class="form-control" name="ingredients[${idx}].ingreName" required>
+      </div>
+      <div class="col-5">
+        <input class="form-control" name="ingredients[${idx}].ingreNum" required>
+      </div>
+      <div class="col-2 d-grid">
+        <button type="button" class="btn btn-danger btn-remove-ingre">삭제</button>
+      </div>`;
+    ingreBox.appendChild(div);
+};
+
+// 단계 추가
+document.getElementById('addStepBtn').onclick = () => {
+    const idx = document.querySelectorAll('.step-row').length;
+    const div = document.createElement('div');
+    div.className = 'card p-3 mb-3 step-row';
+    div.innerHTML = `
+      <label class="section-label" style="font-size: 0.9rem;">${idx + 1}단계</label>
+      <textarea class="form-control mb-3" name="steps[${idx}].stepDesc" rows="2" required></textarea>
+      <input type="file" name="stepImages" class="form-control">
+      <div class="text-end mt-2">
+        <button type="button" class="btn btn-sm btn-danger btn-remove-step">단계 삭제</button>
+      </div>`;
+    stepBox.appendChild(div);
+};
+
+/* 자동 생성 fetch 로직 등 기존 코드 유지 */
+document.getElementById('autoStepBtn').onclick = () => {
+  const title = document.querySelector('[name="title"]').value;
+  const shortDesc = document.getElementById('description').value;
+  const ingredients = Array.from(document.querySelectorAll('[name$="ingreName"]')).map(el => el.value).filter(v => v);
+
+  fetch('/recipes/auto-steps', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
+    },
+    body: JSON.stringify({ title, shortDesc, ingredients })
+  })
+  .then(res => res.json())
+  .then(data => {
+    const steps = data.steps.split('\n').filter(s => s.trim());
+    stepBox.innerHTML = '';
+    steps.forEach((s, i) => {
+      const div = document.createElement('div');
+      div.className = 'card p-3 mb-3 step-row';
+      div.innerHTML = `
+        <label class="section-label" style="font-size: 0.9rem;">${i+1}단계</label>
+        <textarea class="form-control mb-3" name="steps[${i}].stepDesc" rows="2" required>${s}</textarea>
+        <input type="file" name="stepImages" class="form-control">
+        <div class="text-end mt-2">
+            <button type="button" class="btn btn-sm btn-danger btn-remove-step">단계 삭제</button>
+        </div>`;
+      stepBox.appendChild(div);
+    });
+  });
+};
+
+document.getElementById('autoDescSimpleBtn').onclick = () => {
+  const title = document.querySelector('[name="title"]').value;
+  const ingredients = Array.from(document.querySelectorAll('[name$="ingreName"]')).map(el => el.value).filter(v => v);
+  const steps = Array.from(document.querySelectorAll('[name$="stepDesc"]')).map(el => el.value).filter(v => v);
+
+  fetch('/recipes/auto-description', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
+    },
+    body: JSON.stringify({ title, ingredients, steps, mode: 'simple' })
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById('description').value = data.description;
+  });
+};
+
+function saveTemp(){
+  document.querySelector('input[name="status"]').value = 'TEMP';
+  document.querySelector('form').submit();
+}
+</script>
+
+	</div>
+</body>
+</html>

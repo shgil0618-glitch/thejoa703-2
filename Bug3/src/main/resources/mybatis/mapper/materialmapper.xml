@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.thejoa703.dao.MaterialDao">
+
+	<resultMap id="materialMap"
+		type="com.thejoa703.dto.MaterialDto">
+		<id property="materialid" column="MATERIALID" />
+		<result property="title" column="TITLE" />
+		<result property="imageurl" column="IMAGEURL" />
+		<result property="season" column="SEASON" />
+		<result property="temperature" column="TEMPERATURE" />
+		<result property="calories100g" column="CALORIES100G" />
+		<result property="efficacy" column="EFFICACY" />
+		<result property="buyguide" column="BUYGUIDE" />
+		<result property="trimguide" column="TRIMGUIDE" />
+		<result property="storeguide" column="STOREGUIDE" />
+		<result property="category" column="CATEGORY" />
+		<result property="created_at" column="CREATED_AT" />
+		<result property="updated_at" column="UPDATED_AT" />
+		<result property="allergy" column="ALLERGY" />
+	</resultMap>
+
+	<!-- ===== 총 개수 ===== -->
+	<!-- <select id="selectTotalCnt" resultType="int">
+		SELECT COUNT(*) FROM material3
+	</select> -->
+<!-- 	<select id="selectTotalCnt" parameterType="string" resultType="int">
+    SELECT COUNT(*) FROM material3
+    <where>
+        <if test="keyword != null and keyword != ''">
+            AND (title LIKE '%' || #{keyword} || '%' OR category LIKE '%' || #{keyword} || '%')
+        </if>
+    </where>
+	</select> -->
+	<select id="selectTotalCnt" resultType="int">
+    SELECT COUNT(*) FROM material3
+    <where>
+        <if test="keyword != null and keyword != ''">
+            title LIKE '%' || #{keyword} || '%' OR category LIKE '%' || #{keyword} || '%'
+        </if>
+    </where>
+</select>
+	
+
+	<!-- ===== 페이징 목록 ===== parameter: start, end 를 담은 Map -->
+<!-- 	<select id="select10" parameterType="java.util.Map"
+		resultMap="materialMap">
+		SELECT *
+		FROM (
+		SELECT
+		ROW_NUMBER() OVER (ORDER BY created_at DESC) AS rnum,
+		m.*
+		FROM material3 m
+		)
+		WHERE rnum BETWEEN #{start} AND #{end}
+	</select> -->
+	<!-- <select id="select10" parameterType="java.util.Map" resultMap="materialMap">
+    SELECT *
+    FROM (
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY created_at DESC) AS rnum,
+            m.*
+        FROM material3 m
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE '%' || #{keyword} || '%' OR category LIKE '%' || #{keyword} || '%')
+            </if>
+        </where>
+    )
+    WHERE rnum BETWEEN #{start} AND #{end}
+	</select> -->
+<select id="select10" resultMap="materialMap">
+    SELECT * FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY created_at DESC) AS rnum, m.* FROM material3 m
+        <where>
+            <if test="keyword != null and keyword != ''">
+                title LIKE '%' || #{keyword} || '%' OR category LIKE '%' || #{keyword} || '%'
+            </if>
+        </where>
+    ) WHERE rnum BETWEEN #{start} AND #{end}
+</select>
+	<!-- ===== 상세 ===== -->
+	<!-- <select id="selectMaterial" parameterType="int" resultMap="materialMap">
+		SELECT * FROM material3
+		WHERE materialid = #{materialid}
+	</select> -->
+	<select id="selectMaterial" parameterType="int" resultMap="materialMap">
+    SELECT 
+        MATERIALID, TITLE, IMAGEURL, SEASON, TEMPERATURE, CALORIES100G, 
+        EFFICACY, BUYGUIDE, TRIMGUIDE, STOREGUIDE, ALLERGY,
+        CATEGORY, 
+        CREATED_AT, 
+        UPDATED_AT
+    FROM material3
+    WHERE materialid = #{materialid}
+	</select>
+
+	<!-- ===== 제목으로 상세 ===== -->
+	<select id="selectTitle" parameterType="string" resultMap="materialMap">
+		SELECT *
+		FROM material3
+		WHERE title = #{title}
+	</select>
+
+	<!-- ===== 등록 ===== 시퀀스 이름이 material3_seq면 바꿔야 함. 너가 예전에 material_seq라고 
+		했던 적이 있어서 일단 material_seq로 둠. -->
+	<insert id="insertMaterial" parameterType="com.thejoa703.dto.MaterialDto">
+		INSERT INTO material3 (
+		materialid, title, imageurl, allergy, season, temperature, calories100g,
+		efficacy, buyguide, trimguide, storeguide, category, 
+		created_at, updated_at
+		) VALUES (
+		material_seq.NEXTVAL,
+		#{title},
+		#{imageurl},
+		#{allergy},
+		#{season},
+		#{temperature},
+		#{calories100g},
+		#{efficacy},
+		#{buyguide},
+		#{trimguide},
+		#{storeguide},
+		#{category,jdbcType=VARCHAR},
+		SYSDATE,
+		SYSDATE
+		)
+	</insert>
+
+	<!-- ===== 수정 ===== -->
+	<update id="updateMaterial"
+		parameterType="com.thejoa703.dto.MaterialDto">
+		UPDATE material3
+		SET
+		title = #{title},
+		imageurl = #{imageurl},
+		allergy = #{allergy},
+		season = #{season},
+		temperature = #{temperature},
+		calories100g = #{calories100g},
+		efficacy = #{efficacy},
+		buyguide = #{buyguide},
+		trimguide = #{trimguide},
+		storeguide = #{storeguide},
+		category = #{category, jdbcType=VARCHAR},
+		updated_at = SYSDATE
+		WHERE materialid = #{materialid}
+	</update>
+
+	<!-- ===== 삭제 ===== -->
+	<delete id="deleteMaterial" parameterType="int">
+		DELETE FROM material3
+		WHERE materialid = #{value}
+	</delete>
+	
+	<insert id="insertTrend" parameterType="java.util.Map">
+    INSERT INTO material_trends (
+        trend_id, 
+        material_id, 
+        keyword, 
+        period_data, 
+        last_updated
+    ) VALUES (
+        trend_seq.NEXTVAL, 
+        #{materialId}, 
+        #{keyword}, 
+        #{periodData}, 
+        SYSDATE
+    )
+</insert>
+</mapper>

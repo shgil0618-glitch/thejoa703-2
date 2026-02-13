@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.thejoa703.dao.AppUserDao">
+
+	<!-- ========================= -->
+	<!-- create 1. 회원가입 -->
+	<!-- ========================= -->
+	<insert id="insertAppUser" parameterType="AppUserDto">
+
+		<!-- 🔥 PK 먼저 채워준다 -->
+		<selectKey keyProperty="appUserId" resultType="int"
+			order="BEFORE">
+			SELECT appuser_seq.NEXTVAL FROM dual
+		</selectKey>
+
+		INSERT INTO bug3 (
+		APPUSERID,
+		EMAIL,
+		PASSWORD,
+		CREATED_AT,
+		UFILE,
+		MOBILE,
+		NICKNAME,
+		PROVIDER,
+		PROVIDER_ID,
+		ROLE,
+		POSTCODE,
+		ADDRESS,
+		DETAIL_ADDRESS
+		)
+		VALUES (
+		#{appUserId},
+		#{email, jdbcType=VARCHAR},
+		#{password,
+		jdbcType=VARCHAR},
+		SYSDATE,
+		#{ufile, jdbcType=VARCHAR},
+		#{mobile,
+		jdbcType=VARCHAR},
+		#{nickname, jdbcType=VARCHAR},
+		#{provider,
+		jdbcType=VARCHAR},
+		#{providerId, jdbcType=VARCHAR},
+		#{role,
+		jdbcType=VARCHAR},
+		#{postcode, jdbcType=VARCHAR},
+		#{address,
+		jdbcType=VARCHAR},
+		#{detailAddress, jdbcType=VARCHAR}
+		)
+	</insert>
+
+
+	<!-- ========================= -->
+	<!-- create 2. 권한 삽입 (중복 방지) -->
+	<!-- ========================= -->
+	<insert id="insertAuth" parameterType="AuthDto">
+		INSERT INTO authorities
+		(AUTH_ID, EMAIL, AUTH)
+		SELECT authorities_seq.nextval, #{email},
+		#{auth}
+		FROM dual
+		WHERE NOT EXISTS (
+		SELECT 1
+		FROM authorities
+		WHERE email
+		= #{email}
+		AND auth = #{auth}
+		)
+	</insert>
+
+	<!-- ========================= -->
+	<!-- resultMap : 사용자 -->
+	<!-- ========================= -->
+	<resultMap id="appUserMap" type="AppUserDto">
+		<id property="appUserId" column="APPUSERID" />
+		<result property="email" column="EMAIL" />
+		<result property="password" column="PASSWORD" />
+		<result property="nickname" column="NICKNAME" />
+		<result property="provider" column="PROVIDER" />
+		<result property="providerId" column="PROVIDER_ID" />
+		<result property="mobile" column="MOBILE" />
+		<result property="role" column="ROLE" />
+		<result property="ufile" column="UFILE" />
+		<result property="createdAt" column="CREATED_AT" />
+		<result property="postcode" column="POSTCODE" />
+		<result property="address" column="ADDRESS" />
+		<result property="detailAddress" column="DETAIL_ADDRESS" />
+	</resultMap>
+
+	<!-- ========================= -->
+	<!-- resultMap : 권한 -->
+	<!-- ========================= -->
+	<resultMap id="authMap" type="AuthDto">
+		<result property="email" column="EMAIL" />
+		<result property="auth" column="AUTH" />
+	</resultMap>
+
+	<!-- 사용자 + 권한 -->
+	<resultMap id="appUserAuthMap" type="AppUserAuthDto">
+		<result property="email" column="EMAIL" />
+		<result property="password" column="PASSWORD" />
+		<collection property="authList" resultMap="authMap" />
+	</resultMap>
+
+	<!-- ========================= -->
+	<!-- read 1. 로그인 -->
+	<!-- ========================= -->
+	<select id="readAuthByEmail" parameterType="AppUserDto"
+		resultMap="appUserAuthMap">
+		SELECT u.email, u.password, a.auth
+		FROM bug3 u
+		LEFT JOIN
+		authorities a
+		ON u.email = a.email
+		WHERE u.email = #{email}
+		AND
+		u.provider = #{provider}
+	</select>
+
+	<!-- ========================= -->
+	<!-- read 2. 이메일로 회원 조회 -->
+	<!-- ========================= -->
+	<select id="findByEmail" parameterType="AppUserDto"
+		resultMap="appUserMap">
+		SELECT *
+		FROM bug3
+		WHERE email = #{email}
+		AND provider =
+		#{provider}
+	</select>
+
+	<!-- ========================= -->
+	<!-- read 3. 이메일 중복 체크 -->
+	<!-- ========================= -->
+	<select id="iddoubleByEmail" parameterType="AppUserDto"
+		resultType="int">
+		SELECT COUNT(*)
+		FROM bug3
+		WHERE email = #{email}
+		AND provider
+		= #{provider}
+	</select>
+
+	<!-- ========================= -->
+	<!-- update 4. 회원 수정 -->
+	<!-- ========================= -->
+	<update id="updateAppUser" parameterType="AppUserDto">
+		UPDATE bug3
+		<set>
+			<if test="password != null"> PASSWORD = #{password}, </if>
+			<if test="ufile != null"> UFILE = #{ufile}, </if>
+			<if test="mobile != null"> MOBILE = #{mobile}, </if>
+			<if test="nickname != null"> NICKNAME = #{nickname}, </if>
+			<if test="role != null"> ROLE = #{role}, </if>
+			<if test="postcode != null"> POSTCODE = #{postcode}, </if>
+			<if test="address != null"> ADDRESS = #{address}, </if>
+			<if test="detailAddress != null"> DETAIL_ADDRESS = #{detailAddress}, </if>
+		</set>
+		WHERE APPUSERID = #{appUserId}
+	</update>
+
+	<!-- ========================= -->
+	<!-- delete 5. 회원 삭제 -->
+	<!-- ========================= -->
+	<delete id="deleteAppUser" parameterType="AppUserDto">
+		DELETE FROM bug3
+		WHERE
+		APPUSERID = #{appUserId}
+	</delete>
+
+	<!-- ========================= -->
+	<!-- delete 6. 권한 삭제 -->
+	<!-- ========================= -->
+	<delete id="deleteAuth" parameterType="AuthDto">
+		DELETE FROM authorities
+		WHERE email = #{email}
+	</delete>
+
+	<!-- 핸드폰 번호로 이메일 조회 -->
+	<select id="findByPhone" parameterType="map"
+		resultMap="appUserMap">
+		SELECT *
+		FROM bug3
+		WHERE mobile = #{mobile}
+		AND provider = #{provider}
+	</select>
+
+	<!-- 이메일+핸드폰 번호로 회원 조회 -->
+	<select id="findByEmailAndPhone" parameterType="map"
+		resultMap="appUserMap">
+		SELECT *
+		FROM bug3
+		WHERE email = #{email}
+		AND mobile = #{mobile}
+		AND provider = #{provider}
+	</select>
+
+	<!-- 비밀번호 업데이트 -->
+	<update id="updatePassword" parameterType="map">
+		UPDATE bug3
+		SET password = #{newPassword}
+		WHERE email = #{email}
+		AND provider = #{provider}
+	</update>
+
+</mapper>

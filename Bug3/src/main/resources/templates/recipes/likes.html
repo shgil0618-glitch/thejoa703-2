@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head lang="ko">
+<meta charset="UTF-8">
+<meta name="_csrf" th:content="${_csrf.token}"/>
+<meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+<style>
+    .page-title {
+        font-weight: 800;
+        color: #2c3e50;
+        margin-bottom: 30px;
+        position: relative;
+        display: inline-block;
+    }
+    .page-title::after {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: #ff4757;
+        border-radius: 2px;
+    }
+
+    /* 카드 디자인 */
+    .recipe-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .recipe-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+    }
+
+    .fixed-card-img {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+    }
+    
+    .card-body { padding: 1.25rem; }
+    .card-title { 
+        font-weight: 700; 
+        font-size: 1.15rem; 
+        color: #333; 
+        margin-bottom: 8px;
+        height: 1.4em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .category-badge {
+        background-color: #f8f9fa;
+        color: #666;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        border: 1px solid #eee;
+    }
+
+    .card-footer {
+        background: #fff;
+        border-top: 1px solid #f1f1f1;
+        padding: 1rem 1.25rem;
+    }
+
+    /* 하단 통계 정보 및 버튼 */
+    .btn-detail {
+        background-color: #343a40;
+        color: #fff;
+        border-radius: 8px;
+        padding: 5px 12px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-decoration: none;
+    }
+    .btn-detail:hover { background-color: #000; color: #fff; }
+
+    .stats-container {
+        font-size: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+    .view-info { color: #888; margin-bottom: 2px; }
+    .unlike-btn {
+        cursor: pointer;
+        border: none;
+        background: none;
+        padding: 0;
+        color: #ff4757;
+        font-weight: 700;
+        transition: transform 0.2s;
+    }
+    .unlike-btn:hover { transform: scale(1.05); }
+
+    /* 애니메이션 */
+    .recipe-item { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .recipe-item.removing { transform: scale(0.8); opacity: 0; }
+</style>
+<title>좋아요한 레시피</title>
+</head>
+<body>
+<div layout:fragment="content" class="container mt-5 mb-5">
+
+    <div class="mb-5 text-center">
+        <h3 class="page-title">❤️ 내가 좋아요한 레시피</h3>
+        <p class="text-muted">다시 보고 싶은 요리법들을 한곳에 모았습니다.</p>
+    </div>
+
+    <div class="row" id="recipeListContainer">
+        <div class="col-lg-4 col-md-6 mb-4 recipe-item" 
+             th:each="recipe : ${list}" 
+             th:id="'recipe-card-' + ${recipe.recipeId}">
+            
+            <div class="card h-100 recipe-card">
+                <div style="position: relative; overflow: hidden;">
+                    <img th:if="${recipe.image != null}"
+                         th:src="@{/upload/{img}(img=${recipe.image})}"
+                         class="card-img-top fixed-card-img"
+                         alt="레시피 이미지">
+                    <div th:unless="${recipe.image != null}" class="fixed-card-img bg-light d-flex align-items-center justify-content-center text-muted">
+                        No Image
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="mb-2">
+                        <span class="category-badge" th:text="${recipe.categoryName ?: '미분류'}">카테고리</span>
+                    </div>
+                    <h5 class="card-title" th:text="${recipe.title}">레시피 제목</h5>
+                    <p class="text-muted small mb-0" th:text="'by ' + ${recipe.nickname}">작성자</p>
+                </div>
+
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <a th:href="@{/recipes/detail(recipeId=${recipe.recipeId})}"
+                       class="btn-detail shadow-sm">상세보기</a>
+
+                    <div class="stats-container">
+                        <span class="view-info">👀 조회 <span th:text="${recipe.views ?: 0}">0</span></span>
+                        
+                        <button type="button" class="unlike-btn" th:onclick="handleUnlike([[${recipe.recipeId}]])">
+                            ♥ 좋아요 취소
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="emptyMessage" th:if="${#lists.isEmpty(list)}" class="py-5 text-center">
+        <div class="mb-3" style="font-size: 3rem;">🍳</div>
+        <h5 class="text-muted">아직 좋아요한 레시피가 없습니다.</h5>
+        <a th:href="@{/recipes/list}" class="btn btn-outline-primary mt-3 border-pill px-4">맛있는 레시피 찾으러 가기</a>
+    </div>
+
+    <script th:inline="javascript">
+    function handleUnlike(recipeId) {
+        if(!confirm("좋아요 목록에서 삭제하시겠습니까?")) return;
+
+        const token = document.querySelector('meta[name="_csrf"]').content;
+        const header = document.querySelector('meta[name="_csrf_header"]').content;
+
+        fetch('/recipes/unlike', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                [header]: token
+            },
+            body: `recipeId=${recipeId}`
+        })
+        .then(res => {
+            if (res.redirected) {
+                window.location.href = res.url;
+                return;
+            }
+            return res.json();
+        })
+        .then(data => {
+            // data.success가 true거나, JSON 응답이 아니더라도 요청이 성공했다면 화면에서 제거
+            const targetCard = document.getElementById('recipe-card-' + recipeId);
+            if (targetCard) {
+                targetCard.classList.add('removing');
+                setTimeout(() => {
+                    targetCard.remove();
+                    const remaining = document.querySelectorAll('.recipe-item');
+                    if (remaining.length === 0) location.reload();
+                }, 400);
+            }
+        })
+        .catch(err => {
+            console.error("Error:", err);
+            location.reload(); // 에러 발생 시 안전하게 새로고침
+        });
+    }
+    </script>
+</div>
+</body>
+</html>

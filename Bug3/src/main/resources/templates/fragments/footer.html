@@ -1,0 +1,77 @@
+<th:block th:fragment="footer">
+    <style>
+        .bh-footer {
+            /* 1. 배경을 검정 대신 깊이감 있는 다크 브라운으로 변경 */
+            background: #3e2723; 
+            color: #d7ccc8; /* 연한 베이지 텍스트 */
+            padding: 60px 0 30px;
+            font-family: 'Pretendard', sans-serif;
+            /* 2. 상단 경계선을 헤더와 어울리는 브라운 톤으로 */
+            border-top: 5px solid #8B4513; 
+        }
+        .bh-footer .brand {
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        /* 3. HUNTERS 부분에 포인트 골드 브라운 적용 */
+        .bh-footer .brand span { color: #D2B48C; } 
+        
+        .bh-footer .links {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+        .bh-footer .links a {
+            color: #bcaaa4;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: 0.3s;
+        }
+        .bh-footer .links a:hover { color: #ffffff; }
+        
+        .bh-footer .info {
+            font-size: 0.85rem;
+            line-height: 1.8;
+            margin-top: 20px;
+            color: #a1887f; /* 가독성을 고려한 차분한 톤 */
+        }
+        .bh-footer .copy {
+            margin-top: 35px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            color: #8d6e63;
+        }
+        .bh-footer .copy strong { color: #D2B48C; }
+    </style>
+
+    <footer class="bh-footer">
+        <div class="container text-center">
+            <div class="brand">
+                🛡️ BUG <span>HUNTERS</span>
+            </div>
+            <div class="links">
+                <a href="#">브랜드 스토리</a>
+                <a href="#">이용약관</a>
+                <a href="#" style="color: #ffffff; font-weight: 600;">개인정보처리방침</a>
+                <a href="#">고객센터</a>
+            </div>
+            <div class="info">
+                <strong>Team. Bug Hunters</strong> | Leader. 유희재 | Business Address. Incheon, Korea<br>
+                Official Support. <span style="color:#d7ccc8">https://github.com/shgil0618-glitch/Bug-Hunters</span> | CS. 02-1234-5678
+            </div>
+            <div class="copy text-uppercase">
+                Copyright &copy; 2026 <strong>Bug Hunters</strong>. All rights reserved.
+            </div>
+        </div>
+    </footer>
+</th:block>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{fragments/layout}">
+<head>
+    <style>
+        .form-wrapper {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        .form-header {
+            border-bottom: 2px solid #27ae60;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+        }
+        .form-header h2 {
+            font-weight: 800;
+            color: #2c3e50;
+            letter-spacing: -1px;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .form-label::before {
+            content: '•';
+            color: #27ae60;
+            margin-right: 5px;
+            font-weight: bold;
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 1px solid #dee2e6;
+            transition: all 0.2s;
+        }
+        .form-control:focus {
+            border-color: #27ae60;
+            box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.1);
+        }
+        .btn-info {
+            background-color: #17a2b8;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 0 20px;
+        }
+        .btn-primary {
+            background-color: #27ae60;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            padding: 12px 40px;
+        }
+        .btn-primary:hover {
+            background-color: #219150;
+        }
+        .btn-secondary {
+            border-radius: 10px;
+            padding: 12px 40px;
+            background-color: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+        }
+        .btn-secondary:hover {
+            background-color: #e9ecef;
+            color: #495057;
+        }
+        .input-group-custom {
+            display: flex;
+            gap: 10px;
+        }
+        textarea.form-control {
+            resize: none;
+        }
+        .section-box {
+            background-color: #f8faf9;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+    </style>
+</head>
+<body>
+	<div layout:fragment="content">
+		<div class="container">
+            <div class="form-wrapper">
+                <div class="form-header">
+                    <h2 th:text="${dto == null ? '🥦 새 식재료 등록' : '🍏 식재료 정보 수정'}">재료 관리</h2>
+                    <p class="text-muted mb-0">식재료의 상세 정보와 알레르기 유발 물질을 관리합니다.</p>
+                </div>
+
+                <form th:action="@{/material/materialinsert}" method="post" enctype="multipart/form-data">
+                    
+                    <div class="section-box">
+                        <div class="form-group mb-4">
+                            <label class="form-label">식재료명</label>
+                            <div class="input-group-custom">
+                                <input type="text" id="materialTitle" name="title"
+                                    th:value="${dto?.title}" class="form-control" required placeholder="예: 토마토, 고등어, 소고기">
+                                <button type="button" onclick="checkAllergy()"
+                                    class="btn btn-info text-white shadow-sm">알레르기 정보 조회</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label class="form-label">알레르기 유발 물질</label> 
+                            <input type="text" id="allergyInfo" name="allergy" 
+                                th:value="${dto?.allergy}" class="form-control bg-white"
+                                placeholder="상단 조회 버튼 클릭 시 자동으로 입력됩니다." readonly>
+                        </div>
+
+                        <div class="form-group mb-0">
+                            <label class="form-label">식재료 이미지 업로드</label>
+                            <input type="file" name="file" class="form-control" onchange="previewImage(this)">
+                            <small class="text-muted mt-1 d-block">권장 사이즈: 800x600px (jpg, png)</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">제철 정보</label> 
+                            <input type="text" name="season" th:value="${dto?.season}" class="form-control" placeholder="예: 3월~5월">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">보관 온도</label> 
+                            <input type="text" name="temperature" th:value="${dto?.temperature}" class="form-control" placeholder="예: 0~5℃">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">칼로리(100g)</label> 
+                            <input type="text" name="calories100g" th:value="${dto?.calories100g}" class="form-control" placeholder="예: 150kcal">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-4 mt-2">
+                        <label class="form-label">카테고리 분류</label>
+                        <select name="category" class="form-select">
+                            <option value="기타" th:selected="${dto?.category == '기타'}">카테고리 선택</option>
+                            <option value="채소" th:selected="${dto?.category == '채소'}">채소</option>
+                            <option value="과일" th:selected="${dto?.category == '과일'}">과일</option>
+                            <option value="육류" th:selected="${dto?.category == '육류'}">육류</option>
+                            <option value="수산물" th:selected="${dto?.category == '수산물'}">수산물</option>
+                        </select>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">효능 및 특징</label>
+                            <textarea name="efficacy" class="form-control" rows="3"
+                                th:text="${dto?.efficacy}" placeholder="영양 성분이나 건강상 이점을 입력하세요."></textarea>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">구입 요령</label>
+                            <textarea name="buyguide" class="form-control" rows="3"
+                                th:text="${dto?.buyguide}" placeholder="신선한 재료를 고르는 방법을 입력하세요."></textarea>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">손질 방법</label>
+                            <textarea name="trimguide" class="form-control" rows="3"
+                                th:text="${dto?.trimguide}" placeholder="요리 전 세척 및 손질 팁을 입력하세요."></textarea>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">보관 방법</label>
+                            <textarea name="storeguide" class="form-control" rows="3"
+                                th:text="${dto?.storeguide}" placeholder="신선도를 유지하는 보관법을 입력하세요."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary shadow">데이터 저장하기</button>
+                        <a th:href="@{/material/materiallist}" class="btn btn-secondary ms-2">목록으로 돌아가기</a>
+                    </div>
+                </form>
+            </div>
+		</div>
+
+		<script>
+        // 이미지 미리보기 로직 (기능 보완)
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    console.log("이미지 로드 완료");
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+		function checkAllergy() {
+		    const keyword = document.getElementById('materialTitle').value;
+		    if(!keyword) { alert("식재료명을 먼저 입력해주세요."); return; }
+
+		    fetch(`/material/allergy?keyword=${encodeURIComponent(keyword)}`)
+		        .then(res => res.json())
+		        .then(data => {
+                    if(data.body && data.body.items && data.body.items.length > 0) {
+                        const allergyData = data.body.items[0].item.allergy;
+                        if(allergyData) {
+                            document.getElementById('allergyInfo').value = allergyData;
+                            alert("정보를 성공적으로 가져왔습니다.");
+                        } else {
+                            alert("검색 결과는 있으나 알레르기 유발 정보가 비어있습니다.");
+                        }
+                    } else {
+                        alert("해당 제품명으로 검색된 알레르기 정보가 없습니다.");
+                    }
+                })
+                .catch(err => alert("API 연동 중 에러가 발생했습니다."));
+        }
+        </script>
+	</div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{fragments/layout}">
+<div layout:fragment="content" class="container mt-5">
+    <div class="card shadow-sm mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">댓글 수정</h5>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/reviews/editComment}" method="post">
+                <input type="hidden" name="commentId" th:value="${comment.commentId}">
+                
+                <input type="hidden" name="parentId" th:value="${comment.parentId}">
+                
+                <input type="hidden" name="recipeId" th:value="${recipeId}">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">내용</label>
+                    <textarea name="content" class="form-control" rows="4" th:text="${comment.content}" required></textarea>
+                </div>
+                
+                <div class="d-flex justify-content-end gap-2">
+                    <a th:href="@{/reviews/list(recipeId=${recipeId})}" class="btn btn-secondary">취소</a>
+                    <button type="submit" class="btn btn-primary">수정완료</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</html>

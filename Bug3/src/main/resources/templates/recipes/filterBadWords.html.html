@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragments/layout}">
+<head lang="ko">
+<meta charset="UTF-8">
+<meta name="_csrf" th:content="${_csrf.token}"/>
+<meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+<title>비속어 필터링 결과</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    th { background-color: #f4f4f4; }
+    .status-public { color: green; font-weight: bold; }
+    .status-private { color: red; font-weight: bold; }
+    .status-temp { color: orange; font-weight: bold; }
+    button { padding: 10px 15px; margin-top: 20px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div layout:fragment="content">
+    <h1>비속어 필터링 결과 확인</h1>
+
+    <!-- 필터링 실행 버튼 -->
+    <form th:action="@{/recipes/filter-badwords}" method="post">
+        <button type="submit">비속어 필터링 실행</button>
+    </form>
+
+    <!-- 결과 테이블 -->
+    <table>
+        <thead>
+            <tr>
+                <th>레시피 ID</th>
+                <th>제목</th>
+                <th>현재 상태</th>
+                <th>필터링 여부</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="recipe : ${recipes}">
+                <td th:text="${recipe.recipeId}"></td>
+                <td th:text="${recipe.title}"></td>
+                <td th:classappend="'status-' + ${recipe.status}">
+                    <span th:switch="${recipe.status}">
+                        <span th:case="'public'">공개</span>
+                        <span th:case="'private'">비공개</span>
+                        <span th:case="'temp'">임시저장</span>
+                    </span>
+                </td>
+                <td>
+                    <span th:if="${recipe.status == 'private'}">비속어 검출됨</span>
+                    <span th:if="${recipe.status != 'private'}">-</span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

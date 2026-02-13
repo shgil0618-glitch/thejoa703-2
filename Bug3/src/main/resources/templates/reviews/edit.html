@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+
+<div layout:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-3">
+                        <i class="bi bi-pencil-square text-primary me-2"></i>리뷰 수정하기
+                    </h4>
+                    <p class="text-muted mb-4">내용을 수정하고 '수정 완료' 버튼을 눌러주세요.</p>
+
+                    <form id="editForm" th:action="@{/reviews/edit}" method="post">
+                        <input type="hidden" name="reviewId" th:value="${review.reviewId}">
+                        <input type="hidden" name="recipeId" th:value="${review.recipeId}">
+                        <input type="hidden" id="rating" name="rating" th:value="${review.rating}">
+
+                        <div class="mb-4 text-center">
+                            <label class="form-label d-block fw-bold">별점 수정</label>
+                            <div id="starRating" class="d-flex justify-content-center gap-2" style="font-size: 2.5rem; cursor: pointer;">
+                                <i th:each="num : ${#numbers.sequence(1, 5)}"
+                                   class="bi"
+                                   th:classappend="${num <= review.rating} ? 'bi-star-fill text-warning' : 'bi-star'"
+                                   th:data-value="${num}"></i>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">리뷰 내용</label>
+                            <textarea class="form-control" 
+                                      id="commentText" 
+                                      name="commentText" 
+                                      rows="5" 
+                                      maxlength="300"
+                                      th:text="${review.commentText}"></textarea>
+                            <div class="text-end small text-muted mt-1">
+                                <span id="textCount" th:text="${#strings.length(review.commentText)}">0</span> / 300자
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a th:href="@{/reviews/list(recipeId=${review.recipeId})}" class="btn btn-outline-secondary">
+                                취소
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-lg me-1"></i>수정 완료
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="script">
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const stars = document.querySelectorAll('#starRating i');
+    const ratingInput = document.getElementById('rating');
+    const textarea = document.getElementById('commentText');
+    const counter = document.getElementById('textCount');
+
+    // 별점 핸들링 로직
+    stars.forEach(star => {
+        star.addEventListener('mouseover', () => fillStars(star.dataset.value));
+        star.addEventListener('click', () => {
+            ratingInput.value = star.dataset.value;
+        });
+        star.addEventListener('mouseout', () => fillStars(ratingInput.value));
+    });
+
+    function fillStars(value) {
+        stars.forEach(s => {
+            if (s.dataset.value <= value) {
+                s.classList.replace('bi-star', 'bi-star-fill');
+                s.classList.add('text-warning');
+            } else {
+                s.classList.replace('bi-star-fill', 'bi-star');
+                s.classList.remove('text-warning');
+            }
+        });
+    }
+
+    // 글자수 카운터
+    textarea.addEventListener('input', () => {
+        counter.textContent = textarea.value.length;
+    });
+});
+</script>
+</th:block>
+</html>

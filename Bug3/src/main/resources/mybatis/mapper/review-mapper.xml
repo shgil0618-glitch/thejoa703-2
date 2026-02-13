@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thejoa703.dao.ReviewDao">
+
+	<!-- 레시피 ID로 리뷰 조회 -->
+	<select id="findByRecipeId" resultType="com.thejoa703.dto.ReviewDto">
+    SELECT * FROM (
+        SELECT rownum AS rnum, t.* FROM (
+            SELECT
+                r.REVIEW_ID AS reviewId,
+                rc.RECIPE_ID AS recipeId,
+                r.RATING AS rating,
+                r.COMMENT_TEXT AS commentText,
+                b.APPUSERID AS appUserId,
+                r.CREATED_AT AS createdAt,
+                b.NICKNAME AS nickname
+            FROM REVIEW r
+            JOIN RECIPES3 rc ON r.RECIPE_ID = rc.RECIPE_ID
+            JOIN BUG3 b ON r.APP_USER_ID = b.APPUSERID
+            WHERE rc.RECIPE_ID = #{recipeId}
+            ORDER BY r.CREATED_AT DESC
+        ) t
+        WHERE rownum &lt;= #{endRow}
+    )
+    WHERE rnum &gt;= #{startRow}
+</select>
+ 
+<select id="countByRecipeId" resultType="int">
+    SELECT COUNT(*) 
+    FROM REVIEW 
+    WHERE RECIPE_ID = #{recipeId}
+</select>
+
+	<!-- 리뷰 등록 -->
+	<insert id="insertReview"
+		parameterType="com.thejoa703.dto.ReviewDto">
+		INSERT INTO REVIEW (
+		REVIEW_ID, RECIPE_ID, APP_USER_ID, RATING, COMMENT_TEXT, CREATED_AT
+		) VALUES (
+		seq_review.NEXTVAL, #{recipeId}, #{appUserId}, #{rating}, #{commentText}, SYSDATE
+		)
+	</insert>
+
+	<!-- 리뷰 단건 조회 -->
+	<select id="findByReviewId"
+		resultType="com.thejoa703.dto.ReviewDto">
+		SELECT
+		r.REVIEW_ID AS reviewId,
+		rc.RECIPE_ID AS recipeId,
+		r.RATING AS rating,
+		r.COMMENT_TEXT AS commentText,
+		b.APPUSERID AS appUserId,
+		b.NICKNAME AS nickname
+		FROM REVIEW r
+		JOIN RECIPES3 rc ON r.RECIPE_ID = rc.RECIPE_ID
+		JOIN BUG3 b ON r.APP_USER_ID = b.APPUSERID
+		WHERE r.REVIEW_ID = #{reviewId}
+	</select>
+
+
+	<!-- 리뷰 수정 -->
+	<update id="updateReview">
+		UPDATE REVIEW
+		SET RATING = #{rating}, COMMENT_TEXT = #{commentText}, UPDATED_AT =
+		SYSDATE
+		WHERE REVIEW_ID = #{reviewId}
+	</update>
+
+	<!-- 리뷰 삭제 -->
+	<delete id="deleteReview">
+		DELETE FROM REVIEW WHERE REVIEW_ID = #{reviewId}
+	</delete>
+
+	<!-- 평균 평점 조회 -->
+	<select id="getAverageRating" resultType="double">
+		SELECT NVL(AVG(RATING), 0)
+		FROM REVIEW
+		WHERE RECIPE_ID = #{recipeId}
+	</select>
+
+	<!-- 특정 상품 리뷰 텍스트 조회 (예시용) -->
+	<select id="findTextsByProductId" resultType="string">
+		SELECT content
+		FROM review_table
+		WHERE product_id = #{productId}
+	</select>
+	
+	<select id="getAllReviews" resultType="com.thejoa703.dto.ReviewDto">
+    SELECT
+        r.REVIEW_ID    AS reviewId,
+        r.RECIPE_ID    AS recipeId,
+        r.RATING       AS rating,
+        r.COMMENT_TEXT AS commentText,
+        r.CREATED_AT   AS createdAt,
+        b.APPUSERID    AS appUserId,
+        b.NICKNAME     AS nickname,
+        rc.TITLE       AS recipeTitle  FROM REVIEW r
+    JOIN BUG3 b ON r.APP_USER_ID = b.APPUSERID
+    JOIN RECIPES3 rc ON r.RECIPE_ID = rc.RECIPE_ID
+    ORDER BY r.CREATED_AT DESC
+</select>
+
+</mapper>

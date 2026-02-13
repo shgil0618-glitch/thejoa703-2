@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thejoa703.dao.AdminDao">
+
+	<select id="findAllUsers" resultType="map">
+    SELECT 
+        u.APPUSERID as "APPUSERID",
+        u.EMAIL as "EMAIL",
+        u.NICKNAME as "NICKNAME",
+        u.ROLE as "ROLE",
+        TO_CHAR(u.CREATED_AT, 'YYYY-MM-DD') as "CREATED_AT", NVL(m.STATUS, 'NORMAL') as "STATUS",               NVL(m.SUSPEND_REASON, '') as "SUSPEND_REASON"      FROM BUG3 u
+    LEFT JOIN BUG3_MANAGE m ON u.APPUSERID = m.APPUSERID
+    ORDER BY u.CREATED_AT DESC
+</select>
+
+	<update id="upsertUserStatus" parameterType="map">
+    MERGE INTO BUG3_MANAGE m
+    USING DUAL
+    ON (m.APPUSERID = #{appUserId, jdbcType=INTEGER}) WHEN MATCHED THEN
+        UPDATE SET 
+            STATUS = #{status},
+            SUSPEND_REASON = #{suspendReason, jdbcType=VARCHAR},
+            UPDATED_AT = SYSDATE
+    WHEN NOT MATCHED THEN
+        INSERT (APPUSERID, STATUS, SUSPEND_REASON, UPDATED_AT)
+        VALUES (#{appUserId, jdbcType=INTEGER}, #{status}, #{suspendReason, jdbcType=VARCHAR}, SYSDATE)
+</update>
+
+	<update id="updateUserRole">
+		UPDATE BUG3 SET ROLE = #{role} WHERE APPUSERID = #{appUserId}
+	</update>
+
+	<select id="findByEmail" resultType="com.thejoa703.dto.UserDto">
+		SELECT * FROM BUG3 WHERE EMAIL = #{email}
+	</select>
+
+</mapper>
