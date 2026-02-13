@@ -24,6 +24,7 @@ jobs:       # 실행할 job 정의
       # 3. Maven 빌드
       - name: Build Legacy Boot App
         run: mvn clean package -DskipTests
+        working-directory: Bug3  # <-- 여기를 Bug3로 수정
         # working-directory: legacy-boot
 
       # 4. Secrets에서 .env 복원 (CI 러너 루트에 파일 생성)   
@@ -49,9 +50,9 @@ jobs:       # 실행할 job 정의
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "target/*.jar"
+          source: "Bug3/target/*.jar"
           target: "/home/ubuntu/legacy-boot/target/"
-          strip_components: 1   # legacy-boot/target 경로 제거 후 JAR만 복사
+          strip_components: 2   # legacy-boot/target 경로 제거 후 JAR만 복사
 
       # 7. 기존 .env 디렉토리 삭제 (있으면 제거)
       - name: Remove existing .env directory on EC2
