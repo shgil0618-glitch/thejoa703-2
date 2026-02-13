@@ -339,13 +339,4 @@ git add .
 git commit -m "test"
 git push origin main
 ```
-ssss
-=======
-1122123123awdawdawdss11
->>>>>>> dd8ab62415b951353b7d444cd4741927ddd71a4c
-=======
-1122123123awdawdawdss11
->>>>>>> dd8ab62415b951353b7d444cd4741927ddd71a4c
-=======
-1122123123awdawdawdss11
->>>>>>> dd8ab62415b951353b7d444cd4741927ddd71a4c
+
